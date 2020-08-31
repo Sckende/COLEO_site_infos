@@ -3,6 +3,7 @@ setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests
 library(tidyverse)
 library(rcoleo)
 library(dplyr)
+library(purrr)
 
 #source("functions.R")
 
@@ -42,4 +43,7 @@ j <- j %>%
                              "<b> date_creation</b> ",
                              opened_at))
 
-
+# Observations des especes
+all_sp <- get_obs()
+all_sp_df <- map_df(all_sp[[1]], 1, drop = FALSE)
+dim(all_sp_df)

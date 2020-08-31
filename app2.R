@@ -5,9 +5,9 @@ library(rcoleo)
 library(leaflet)
 library(dplyr)
 library(shinythemes)
-#df = data.frame(Lat = -9:10, Long = rnorm(20), hab = sample(paste("hab", 1:5), 20, replace = T))
 
-source("Manipulations_rcoleo.R")
+
+#if(!exists("all_obs_sp_df")){source("Manipulations_rcoleo.R")}
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("slate"),
@@ -29,7 +29,9 @@ ui <- fluidPage(theme = shinytheme("slate"),
                          leafletOutput("map"))
                   
                   
-                )
+                ),
+                fluidRow(#dataTableOutput("donnees"))
+                  tableOutput("donnees"))
 )
 
 # Define server logic required to draw a histogram
@@ -55,6 +57,14 @@ server <- function(input, output, session) {
                          color = unique(j$col[j$type == input$hab]))
       
     }
+  })
+  output$donnees <- renderTable({
+#    if(input$hab == "all"){
+    renderTable(head(all_obs_sp_df))
+#      renderDataTable(all_obs_sp_df, options = list(pageLength = 5))
+ #   } else {
+    #   renderTable(all_sp_df[all_obs_sp_df$type == input$hab], options = list(pageLength = 5))
+    # }
   })
 }
 
