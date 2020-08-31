@@ -1,4 +1,4 @@
-setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info")
+setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
 # selection of sites by shiny
 
 library(shiny)
