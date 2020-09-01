@@ -29,7 +29,12 @@ ui <- fluidPage(theme = shinytheme("slate"),
                   
                 ),
                 fluidRow(
-                dataTableOutput("donnees"))
+                column(10,
+                       dataTableOutput("donnees")),
+                column(2,
+                       downloadButton("DL_data", "Télécharger"))
+                )
+
 )
 
 # ---------------------------------------------------- #
@@ -59,6 +64,15 @@ server <- function(input, output, session) {
     }
   })
   output$donnees <- renderDataTable(all_obs[all_obs$site_code == input$site,],                                     options = list(pageLength = 50))
+  
+  output$DL_data <- downloadHandler(
+    filename = function() {
+          paste(input$site, paste("_", Sys.Date(), sep = ""), '.csv', sep="")
+        },
+        content = function(file) {
+          write.csv(all_obs[all_obs$site_code == input$site,], file)
+        }
+  )
 
 }
 
