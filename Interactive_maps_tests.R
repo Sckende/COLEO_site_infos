@@ -27,6 +27,8 @@ leaflet() %>%
 
 ### -------------- INTERACTIVE WAFFLE PLOT TESTS ---------------- ###
 
+### TEST 1
+#----------
 # library(waffle)
 # packageVersion("waffle")
 # library(magrittr)
@@ -66,3 +68,59 @@ ggplot(xdf, aes(fill=type, values=n)) +
   ) +
   theme_ipsum_rc(grid="") +
   theme_enhance_waffle()
+
+# TEST 2
+# ------
+
+library(dplyr)
+library(rvest)
+library(ggplot2)
+library(waffle)
+library(rcdimple)
+
+url14 <- html("http://en.wikipedia.org/wiki/Results_of_the_Indian_general_election,_2014")
+
+tbls14 <- html_nodes(url14, "table")
+
+df14 <- data.frame(html_table(tbls14[3], fill = TRUE))
+
+df14 <- df14 %>%
+  select(party = Party, seats = Seats) %>%
+  filter(party != "Total", seats > 0, !is.na(party), !is.na(seats)) %>%
+  mutate(party2 = ifelse(min_rank(desc(seats)) < 11, party, "Other")) %>%
+  group_by(party2) %>%
+  summarize(seats2 = sum(seats)) %>%
+  mutate(party2 = gsub("All India Anna Dravida Munnetra Kazhagam", "All India ADMK", party2)) 
+
+
+v14 <- c("Bharatiya Janata Party", "Indian National Congress", 
+         "All India ADMK", "All India Trinamool Congress", 
+         "Biju Janata Dal", "Shiv Sena", "Telugu Desam Party", "Telangana Rashtra Samithi", 
+         "Communist Party of India (Marxist)", "YSR Congress Party", "Other")
+
+df14$factor <- factor(df14$party2, levels = rev(v14), labels = rev(v14))
+
+df14 <- arrange(df14, desc((factor)))
+
+colors14 <- c("#FF8C00", "#00FFFF", "#000000", "#7CFC00", "#006400", 
+              "#FFA500", "#FFFF00", "#FFC0CB", "#FF0000", "#0000FF", "#696969")
+
+vec14 <- structure(df14$seats2, names = df14$party2)
+
+
+# Interactive waffle chart!
+
+waffle(vec14, rows = 15, title = "2014 Lok Sabha", colors = colors14) %>%
+  as_rcdimple(height = 375, width = 1000 ) %>%
+  add_legend( x = "0%", width = "100%", orderRule = "vec14")
+
+
+### --------- OVERLAP BETWEEN BARPLOT/HISTOGRAM & LINE PLOT ----------------- ###
+
+g <- CO2 %>% sample_n(12) 
+
+#barplot(g$conc)
+plot(g$conc, type = "h")
+par(new = TRUE)
+plot(g$uptake, type = "l")
+
