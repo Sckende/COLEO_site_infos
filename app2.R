@@ -88,7 +88,7 @@ server <- function(input, output, session) {
       theme_enhance_waffle()
   })
   
-  output$donnees <- renderDataTable(all_obs[all_obs$site_code == input$site,],                                     options = list(pageLength = 50))
+  output$donnees <- renderDataTable(all_obs[all_obs$site_code == input$site,],                                     options = list(pageLength = 20))
   
   output$DL_data <- downloadHandler(
     filename = function() {
