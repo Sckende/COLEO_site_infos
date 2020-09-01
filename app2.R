@@ -5,6 +5,8 @@ library(rcoleo)
 library(leaflet)
 library(dplyr)
 library(shinythemes)
+library(hrbrthemes)
+library(waffle)
 
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
@@ -16,23 +18,29 @@ ui <- fluidPage(theme = shinytheme("slate"),
                   column(4,
                          selectInput("site",
                                      "Code du site",
-                                     c("all", sort(unique(all_obs$site_code)))),
+                                     c("all", sort(unique(all_obs$site_code))))),
+                  column(4,
                          selectInput("hab",
                                      "Type d'habitat",
-                                     c("all", sort(unique(all_sites$type)))
+                                     c("all", sort(unique(all_sites$type))))
                          )
-                         
-                  ),
-                  column(8,
+                ),
+                fluidRow(
+                  column(6,
+                         plotOutput("waff"))
+                  ,
+                  column(6,
                          leafletOutput("map"))
                   
                   
                 ),
                 fluidRow(
-                column(10,
-                       dataTableOutput("donnees")),
-                column(2,
-                       downloadButton("DL_data", "Télécharger"))
+                column(6,
+                       dataTableOutput("donnees"))
+
+                ),
+                fluidRow(
+                  downloadButton("DL_data", "Télécharger")
                 )
 
 )
@@ -42,6 +50,8 @@ ui <- fluidPage(theme = shinytheme("slate"),
 
 server <- function(input, output, session) {
   
+  
+  # Map output 
   output$map <- renderLeaflet({
     if(input$hab == "all"){
       leaflet() %>%
@@ -63,6 +73,21 @@ server <- function(input, output, session) {
       
     }
   })
+  
+  
+  output$waff <- renderPlot({
+   xdf <- all_obs %>%  filter(site_code == input$site) %>% count(type)
+    
+    ggplot(xdf, aes(fill=type, values=n)) +
+      geom_waffle(color = "white", size=1.125, n_rows = 6) +
+      coord_equal() +
+      labs(
+        title = paste("Répartition du type d'espèces sur le site", input$site, sep = " ")
+      ) +
+      theme_ipsum_rc(grid="") +
+      theme_enhance_waffle()
+  })
+  
   output$donnees <- renderDataTable(all_obs[all_obs$site_code == input$site,],                                     options = list(pageLength = 50))
   
   output$DL_data <- downloadHandler(
