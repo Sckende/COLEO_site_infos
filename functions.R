@@ -8,7 +8,7 @@ get_can_ne <- function() {
 
 get_obs_df <- function(){
   obs <- rcoleo::get_obs()
-  obs_df <- obs[[1]] %>% map("body") %>% map_df(~ select(.x, -closed_at))
+  obs_df <- obs[[1]] %>% map("body") %>% map_df(~ select(.x, -c(closed_at, media)))
   return(obs_df)
 }
 
