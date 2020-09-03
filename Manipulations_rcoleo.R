@@ -53,3 +53,5 @@ dim(all_obs)
 
 # Vérification si tous les codes des sites pour les especes observees sont contenus dans la liste de codes de tous les sites existants
 all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
+
+
