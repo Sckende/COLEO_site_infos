@@ -23,6 +23,10 @@ all_sites <- all_sites %>%
          lat_site = do.call("rbind", all_sites$geom.coordinates)[,2])
 names(all_sites)
 
+# Modification de la variable "created_at" pour obtenir l'année de création des sites
+all_sites <- all_sites %>% 
+  separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
+
 # Association d'une couleur par habitat
 all_sites$col <- c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(all_sites$type))]
 
@@ -40,8 +44,8 @@ all_sites <- all_sites %>%
                              "<b> type_habitat</b> ",
                              type,
                              "<br/>",
-                             "<b> date_creation</b> ",
-                             opened_at))
+                             "<b> annee_creation</b> ",
+                             Y_creation))
 
 # Observations des especes
 # Utilisation de la fonction de Andrew get_obs_df() - modifiée via retrait de la variable "media", qui est une liste et qui beug avec la fonction xtable(xtable) de la fonction renderTable(Shiny)
