@@ -15,15 +15,13 @@ if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
 # Define UI for application that draws a histogram
 ui <- fluidPage(#theme = shinytheme("slate"),
   fluidRow(
-    column(4,
-           selectInput("site",
-                       "Code du site",
-                       c("tous", sort(unique(all_obs$site_code))))),
-    column(4,
-           selectInput("hab",
-                       "Type d'échantillonnage",
-                       c("tous", sort(unique(all_sites$type))))
-    )
+    column(3,
+           selectInput("an",
+                       "Année d'ouverture du site",
+                       #c("toutes", unique(sort(all_sites$Y_creation))))
+                        unique(sort(all_sites$Y_creation)))),
+    column(3,
+           uiOutput("echan"))
   ),
   fluidRow(
     column(5,
@@ -59,26 +57,41 @@ ui <- fluidPage(#theme = shinytheme("slate"),
 
 server <- function(input, output, session) {
   
+  # -------- #
+  # Listes déroulantes avec années, puis les types d'échantillonnage correspondants - Listes reliées
+  
+  site_an = reactive({
+    all_sites[all_sites$Y_creation == input$an,]
+  })
+  output$echan <- renderUI({
+    selectInput("type_ech", "Type d'échantill", c("Tous", sort(unique(site_an()$type))))
+  })
+  
   # -------- # 
   # Map output 
   output$map <- renderLeaflet({
-    if(input$hab == "tous"){
-      leaflet() %>%
-        addTiles() %>% # Affichage du fond de carte
-        addCircleMarkers(lng = all_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
-                         lat = all_sites$lat_site,
-                         radius = 8, # taille du cercle
-                         popup = all_sites$popup_info, # Ajout de fenêtres pop-up
-                         color = all_sites$col)
-    }else{
+    if(input$type_ech == "Tous"){
+      
+      data_sites <- all_sites %>% filter(Y_creation == site_an()$Y_creation)
       
       leaflet() %>%
         addTiles() %>% # Affichage du fond de carte
-        addCircleMarkers(lng = all_sites$long_site[all_sites$type == input$hab], # Positionnement des sites avec les coordonnées long/lat
-                         lat = all_sites$lat_site[all_sites$type == input$hab],
+        addCircleMarkers(lng = data_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
+                         lat = data_sites$lat_site,
                          radius = 8, # taille du cercle
-                         popup = all_sites$popup_info[all_sites$type == input$hab], # Ajout de fenêtres pop-up
-                         color = unique(all_sites$col[all_sites$type == input$hab]))
+                         popup = data_sites$popup_info, # Ajout de fenêtres pop-up
+                         color = data_sites$col)
+    }else{
+      
+      data_sites <- all_sites %>% filter(Y_creation == site_an()$Y_creation, type == input$type_ech)
+      
+      leaflet() %>%
+        addTiles() %>% # Affichage du fond de carte
+        addCircleMarkers(lng = data_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
+                         lat = data_sites$lat_site,
+                         radius = 8, # taille du cercle
+                         popup = data_sites$popup_info, # Ajout de fenêtres pop-up
+                         color = unique(data_sites$col))
       
     }
   })
