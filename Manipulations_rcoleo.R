@@ -27,6 +27,9 @@ names(all_sites)
 all_sites <- all_sites %>% 
   separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
+all_obs <- all_obs %>% 
+  separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
+
 # Association d'une couleur par habitat
 all_sites$col <- c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(all_sites$type))]
 
