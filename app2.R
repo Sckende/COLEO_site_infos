@@ -43,7 +43,8 @@ ui <- fluidPage(#theme = shinytheme("slate"),
            "Répartition type espèce",
            plotOutput("waff")),
     column(6,
-           dataTableOutput("donnees"))
+           #dataTableOutput("donnees"))
+           textOutput("donnees"))
     
   ),
   fluidRow(
@@ -80,21 +81,52 @@ server <- function(input, output, session) {
                          lat = data_sites$lat_site,
                          radius = 8, # taille du cercle
                          popup = data_sites$popup_info, # Ajout de fenêtres pop-up
-                         color = data_sites$col)
-    }else{
-      
-      data_sites <- all_sites %>% filter(Y_creation == site_an()$Y_creation, type == input$type_ech)
-      
-      leaflet() %>%
-        addTiles() %>% # Affichage du fond de carte
-        addCircleMarkers(lng = data_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
-                         lat = data_sites$lat_site,
-                         radius = 8, # taille du cercle
-                         popup = data_sites$popup_info, # Ajout de fenêtres pop-up
-                         color = unique(data_sites$col))
-      
-    }
+                         color = data_sites$col,
+                         layerId = data_sites$site_code)
+
+    # Click on a marker
+    # observe({input$map_marker_click
+    #   {
+    #     event <- input$map_marker_click
+    #     print(event)
+
+
+      # DF_SP <- all_obs$site_code[all_obs]
+      # 
+      # output$donnees <- renderDataTable(
+      #   DF_SP,
+      #   options = list(pageLength = 10)
+      #)
+      }
+
+        
+      })
+  observe({ 
+    
+    event <- input$map_marker_click
+    
+    message <- print(event$id) 
+    
+    output$donnees <- renderText(message)
+    
+    
   })
+
+   # }
+    # else{
+    #   
+    #   data_sites <- all_sites %>% filter(Y_creation == site_an()$Y_creation, type == input$type_ech)
+    #   
+    #   leaflet() %>%
+    #     addTiles() %>% # Affichage du fond de carte
+    #     addCircleMarkers(lng = data_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
+    #                      lat = data_sites$lat_site,
+    #                      radius = 8, # taille du cercle
+    #                      popup = data_sites$popup_info, # Ajout de fenêtres pop-up
+    #                      color = unique(data_sites$col))
+    #   
+    # }
+#  })
   
   # -------- # 
   output$condAb <- renderPlot(
@@ -140,21 +172,21 @@ server <- function(input, output, session) {
   
   # Tableau de données #  
   
-  DF_SP <- reactive({
-    if(input$site == "tous"){
-      DF_SP <- all_obs %>% arrange(obs_species.taxa_name) %>%
-        select(obs_species.taxa_name, type) %>% arrange(obs_species.taxa_name)
-    } else {
-      DF_SP <- all_obs %>% filter(site_code == input$site) %>% 
-        select(obs_species.taxa_name, type) %>% arrange(obs_species.taxa_name)
-    }
-  })
-  output$donnees <- renderDataTable(
-    
-    DF_SP()[!duplicated(DF_SP()$obs_species.taxa_name),],
-    options = list(pageLength = 10)
-    
-  )
+  # DF_SP <- reactive({
+  #   if(input$site == "tous"){
+  #     DF_SP <- all_obs %>% arrange(obs_species.taxa_name) %>%
+  #       select(obs_species.taxa_name, type) %>% arrange(obs_species.taxa_name)
+  #   } else {
+  #     DF_SP <- all_obs %>% filter(site_code == input$site) %>% 
+  #       select(obs_species.taxa_name, type) %>% arrange(obs_species.taxa_name)
+  #   }
+  # })
+  # output$donnees <- renderDataTable(
+  #   
+  #   DF_SP()[!duplicated(DF_SP()$obs_species.taxa_name),],
+  #   options = list(pageLength = 10)
+  #   
+  # )
   # -------- #  
   output$DL_data <- downloadHandler(
     filename = function() {
