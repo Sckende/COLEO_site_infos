@@ -88,38 +88,135 @@
 
 #### Multiple selectInput choices ####
 
-runApp(list(
-  ui = bootstrapPage(
-    selectInput('an', 'année création', unique(sort(all_sites$Y_creation))),
-    uiOutput('echan')
-  ),
-  server = function(input, output, session){
-    site_an = reactive({
-      all_sites[all_sites$Y_creation == input$an,]
-    })
-    output$echan <- renderUI({
-      selectInput("type_ech", "Type d'échantill", sort(unique(site_an()$type)))
-    })
-      }
-  
-))
+# runApp(list(
+#   ui = bootstrapPage(
+#     selectInput('an', 'année création', unique(sort(all_sites$Y_creation))),
+#     uiOutput('echan')
+#   ),
+#   server = function(input, output, session){
+#     site_an = reactive({
+#       all_sites[all_sites$Y_creation == input$an,]
+#     })
+#     output$echan <- renderUI({
+#       selectInput("type_ech", "Type d'échantill", sort(unique(site_an()$type)))
+#     })
+#       }
+#   
+# ))
 
 
+# library(shiny)
+# runApp(list(
+#   ui = bootstrapPage(
+#     textInput("text", "Enter Formula", "a=b+c"),
+#     uiOutput('variables')
+#   ),
+#   server = function(input, output){
+#     outVar <- reactive({
+#       vars <- all.vars(parse(text = input$text))
+#       vars <- as.list(vars)
+#       return(vars)
+#     })
+#     
+#     output$variables = renderUI({
+#       selectInput('variables2', 'Variables', outVar())
+#     })
+#   }
+# ))
+
+#### Selecting data when clicking on a point - LEAFLET ####
+
+library(dplyr)
 library(shiny)
-runApp(list(
-  ui = bootstrapPage(
-    textInput("text", "Enter Formula", "a=b+c"),
-    uiOutput('variables')
-  ),
-  server = function(input, output){
-    outVar <- reactive({
-      vars <- all.vars(parse(text = input$text))
-      vars <- as.list(vars)
-      return(vars)
-    })
+library(leaflet)
+library(sf)
+
+# NC counties - a shapefile shipped with the sf package
+shape <- st_read(system.file("shape/nc.shp", package ="sf")) %>% 
+  st_transform(shape, crs = 4326) %>% 
+  mutate(widgets = 300) %>% # a column of fake data
+  group_by(widgets) %>% 
+  summarize()
+
+
+# three cities - note the x and y coordinates
+points <- data.frame(name = c("Raleigh", "Greensboro", "Wilmington"),
+                     x = c(-78.633333, -79.819444, -77.912222),
+                     y = c(35.766667, 36.08, 34.223333),
+                     widgets = c(10, 20, 30)) %>% 
+  st_as_sf(coords = c("x", "y"), crs = 4326)
+
+
+# create unique ids for both data sets
+
+shape$uid <- "P1"
+points$uid <- paste0("M", 1:3)
+
+
+# Define UI 
+ui <- fluidPage(
+  
+  # Application title
+  titlePanel("Go Tar Heels!"),
+  
+  
+  verticalLayout(
+    # Top panel with widgets sold
+    wellPanel(
+      textOutput("widgets")
+    ),
     
-    output$variables = renderUI({
-      selectInput('variables2', 'Variables', outVar())
-    })
-  }
-))
+    # the map itself
+    mainPanel(
+      leafletOutput("map")
+    )
+  )
+)
+
+# Define server logic       
+server <- function(input, output) {
+  
+  output$map <- renderLeaflet({
+    
+    leaflet() %>% 
+      addProviderTiles("Stamen.Toner") %>% 
+      # addPolygons(data = shape, 
+      #             fillColor = "aliceblue", 
+      #             color = "grey",
+      #             layerId = ~uid) %>%  # unique id for polygons
+      addCircleMarkers(data = points, 
+                       fillColor = "red", 
+                       color = NA,
+                       radius = 10,
+                       fillOpacity = .75,
+                       layerId = ~uid)  # unique id for points
+  })
+  
+  # click on polygon
+  # observe({ 
+  #   
+  #   event <- input$map_shape_click
+  #   
+  #   message <- paste("widgets sold in North Carolina:", shape$widgets[shape$uid == event$id])
+  #   
+  #   output$widgets <- renderText(message)
+  #   
+  #   
+  #   
+  #   
+  # })
+  # click on a marker
+  observe({ 
+    
+    event <- input$map_marker_click
+    
+    message <- paste("widgets sold in", points$name[points$uid == event$id],":", points$widgets[points$uid == event$id]) 
+    
+    output$widgets <- renderText(message)
+    
+    
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)  
