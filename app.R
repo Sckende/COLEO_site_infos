@@ -65,23 +65,61 @@
 
 #### TESTS - HTML WIDGETS ####
 
-library(shiny)
-library(sigma)
+# library(shiny)
+# library(sigma)
+# 
+# gexf <- system.file("examples/ediaspora.gexf.xml", package = "sigma")
+# 
+# ui = shinyUI(fluidPage(
+#   checkboxInput("drawEdges", "Draw Edges", value = TRUE),
+#   checkboxInput("drawNodes", "Draw Nodes", value = TRUE),
+#   sigmaOutput('sigma')
+# ))
+# 
+# server = function(input, output) {
+#   output$sigma <- renderSigma(
+#     sigma(gexf, 
+#           drawEdges = input$drawEdges, 
+#           drawNodes = input$drawNodes)
+#   )
+# }
+# 
+# shinyApp(ui = ui, server = server)
 
-gexf <- system.file("examples/ediaspora.gexf.xml", package = "sigma")
+#### Multiple selectInput choices ####
 
-ui = shinyUI(fluidPage(
-  checkboxInput("drawEdges", "Draw Edges", value = TRUE),
-  checkboxInput("drawNodes", "Draw Nodes", value = TRUE),
-  sigmaOutput('sigma')
+runApp(list(
+  ui = bootstrapPage(
+    selectInput('an', 'année création', unique(sort(all_sites$Y_creation))),
+    uiOutput('echan')
+  ),
+  server = function(input, output, session){
+    site_an = reactive({
+      all_sites[all_sites$Y_creation == input$an,]
+    })
+    output$echan <- renderUI({
+      selectInput("type_ech", "Type d'échantill", sort(unique(site_an()$type)))
+    })
+      }
+  
 ))
 
-server = function(input, output) {
-  output$sigma <- renderSigma(
-    sigma(gexf, 
-          drawEdges = input$drawEdges, 
-          drawNodes = input$drawNodes)
-  )
-}
 
-shinyApp(ui = ui, server = server)
+library(shiny)
+runApp(list(
+  ui = bootstrapPage(
+    textInput("text", "Enter Formula", "a=b+c"),
+    uiOutput('variables')
+  ),
+  server = function(input, output){
+    outVar <- reactive({
+      vars <- all.vars(parse(text = input$text))
+      vars <- as.list(vars)
+      return(vars)
+    })
+    
+    output$variables = renderUI({
+      selectInput('variables2', 'Variables', outVar())
+    })
+  }
+))
