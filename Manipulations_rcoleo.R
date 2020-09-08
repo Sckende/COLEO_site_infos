@@ -55,11 +55,33 @@ names(all_obs)
 str(all_obs)
 dim(all_obs)
 
-# Modification de la variable "created_at" pour obtenir l'année de création des sites pour chaque observation
+# Vérification si tous les codes des sites pour les especes observees sont contenus dans la liste de codes de tous les sites existants
+all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
+
+# Modification de la variable "created_at" pour obtenir l'année de l'ÉCHANTILLONNAGE EFFECTUÉ SUR LES SITES
 all_obs <- all_obs %>% 
   separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
-# Vérification si tous les codes des sites pour les especes observees sont contenus dans la liste de codes de tous les sites existants
-all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
+
+# Récupération des lat/long de chaque site dans le DF des observations
+
+j <- all_sites %>% select(site_code, lat_site, long_site)
+all_obs <- left_join(all_obs, j, by = "site_code")
+
+# Vérification si tous les ensembles de codes des sites, lat & long pour les observations sont contenus dans les ensembles de codes de tous les sites, lat et long par sites
+x1 <- NULL
+for(i in unique(all_obs$site_code)){
+  l <- paste(i, unique(all_obs$long_site[all_obs$site_code == i]), unique(all_obs$lat_site[all_obs$site_code == i]))
+  x1 <- c(x1, l)
+}
+
+x2 <- NULL
+for(i in all_sites$site_code){
+  l <- paste(i, unique(all_sites$long_site[all_sites$site_code == i]), unique(all_sites$lat_site[all_sites$site_code == i]))
+  x2 <- c(x2, l)
+}
+
+all(x1 %in% x2) # All is fine !
+
 
 
