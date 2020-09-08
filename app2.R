@@ -17,9 +17,9 @@ ui <- fluidPage(#theme = shinytheme("slate"),
   fluidRow(
     column(3,
            selectInput("an",
-                       "Année d'ouverture du site",
-                       #c("toutes", unique(sort(all_sites$Y_creation))))
-                        unique(sort(all_sites$Y_creation)))),
+                       "Année d'échantillonnage des sites",
+                       #c("toutes", unique(sort(all_obs$Y_creation))))
+                        unique(sort(all_obs$Y_creation)))),
     column(3,
            uiOutput("echan"))
   ),
@@ -43,8 +43,9 @@ ui <- fluidPage(#theme = shinytheme("slate"),
            "Répartition type espèce",
            plotOutput("waff")),
     column(6,
-           #dataTableOutput("donnees"))
-           textOutput("donnees"))
+           dataTableOutput("donnees"))
+           #textOutput("donnees"))
+           #tableOutput("donnees"))
     
   ),
   fluidRow(
@@ -61,11 +62,11 @@ server <- function(input, output, session) {
   # -------- #
   # Listes déroulantes avec années, puis les types d'échantillonnage correspondants - Listes reliées
   
-  site_an = reactive({
-    all_sites[all_sites$Y_creation == input$an,]
+  obs_an = reactive({
+    all_obs[all_obs$Y_creation == input$an,]
   })
   output$echan <- renderUI({
-    selectInput("type_ech", "Type d'échantill", c("Tous", sort(unique(site_an()$type))))
+    selectInput("type_ech", "Type d'échantill", c("Tous", sort(unique(obs_an()$type_ech))))
   })
   
   # -------- # 
@@ -73,60 +74,52 @@ server <- function(input, output, session) {
   output$map <- renderLeaflet({
     if(input$type_ech == "Tous"){
       
-      data_sites <- all_sites %>% filter(Y_creation == site_an()$Y_creation)
+      #data_obs <- all_obs %>% filter(Y_creation == obs_an()$Y_creation)
       
       leaflet() %>%
         addTiles() %>% # Affichage du fond de carte
-        addCircleMarkers(lng = data_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
-                         lat = data_sites$lat_site,
+        addCircleMarkers(lng = obs_an()$long_site, # Positionnement des sites avec les coordonnées long/lat
+                         lat = obs_an()$lat_site,
                          radius = 8, # taille du cercle
-                         popup = data_sites$popup_info, # Ajout de fenêtres pop-up
-                         color = data_sites$col,
-                         layerId = data_sites$site_code)
-
-    # Click on a marker
-    # observe({input$map_marker_click
-    #   {
-    #     event <- input$map_marker_click
-    #     print(event)
+                         popup = obs_an()$popup_info, # Ajout de fenêtres pop-up
+                         color = obs_an()$col,
+                         layerId = obs_an()$site_code)
 
 
-      # DF_SP <- all_obs$site_code[all_obs]
-      # 
-      # output$donnees <- renderDataTable(
-      #   DF_SP,
-      #   options = list(pageLength = 10)
-      #)
+
       }
-
+   # else{
+    #   
+    #   data_obs <- all_sites %>% filter(Y_creation == obs_an()$Y_creation, type == input$type_ech)
+    #   
+    #   leaflet() %>%
+    #     addTiles() %>% # Affichage du fond de carte
+    #     addCircleMarkers(lng = data_obs$long_site, # Positionnement des sites avec les coordonnées long/lat
+    #                      lat = data_obs$lat_site,
+    #                      radius = 8, # taille du cercle
+    #                      popup = data_obs$popup_info, # Ajout de fenêtres pop-up
+    #                      color = unique(data_obs$col))
+    #   
+    # }
         
       })
+  
+      # Click on a map marker
   observe({ 
     
     event <- input$map_marker_click
-    
-    message <- print(event$id) 
-    
-    output$donnees <- renderText(message)
+
+   #message <- head(all_obs[all_obs$site_code == event$id,])
+   message <- all_obs[all_obs$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
+    #message <- head(all_obs[all_obs$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")])
+    #output$donnees <- renderTable(message)
+    output$donnees <- renderDataTable(message,
+                                      options = list(pageLength = 10))
+
     
     
   })
 
-   # }
-    # else{
-    #   
-    #   data_sites <- all_sites %>% filter(Y_creation == site_an()$Y_creation, type == input$type_ech)
-    #   
-    #   leaflet() %>%
-    #     addTiles() %>% # Affichage du fond de carte
-    #     addCircleMarkers(lng = data_sites$long_site, # Positionnement des sites avec les coordonnées long/lat
-    #                      lat = data_sites$lat_site,
-    #                      radius = 8, # taille du cercle
-    #                      popup = data_sites$popup_info, # Ajout de fenêtres pop-up
-    #                      color = unique(data_sites$col))
-    #   
-    # }
-#  })
   
   # -------- # 
   output$condAb <- renderPlot(
