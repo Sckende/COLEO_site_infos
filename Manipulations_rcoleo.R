@@ -27,9 +27,6 @@ names(all_sites)
 all_sites <- all_sites %>% 
   separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
-all_obs <- all_obs %>% 
-  separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
-
 # Association d'une couleur par habitat
 all_sites$col <- c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(all_sites$type))]
 
@@ -57,6 +54,10 @@ all_obs <-get_obs_df()
 names(all_obs)
 str(all_obs)
 dim(all_obs)
+
+# Modification de la variable "created_at" pour obtenir l'année de création des sites pour chaque observation
+all_obs <- all_obs %>% 
+  separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
 # Vérification si tous les codes des sites pour les especes observees sont contenus dans la liste de codes de tous les sites existants
 all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
