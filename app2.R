@@ -7,6 +7,7 @@ library(dplyr)
 library(shinythemes)
 library(hrbrthemes)
 library(waffle)
+library(shinydashboard)
 
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
@@ -15,47 +16,41 @@ if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
 # Define UI for application that draws a histogram
 ui <- fluidPage(#theme = shinytheme("slate"),
   fluidRow(
-    column(3,
-           selectInput("an",
-                       "Année d'échantillonnage des sites",
-                       #c("toutes", unique(sort(all_obs$Y_obs))))
-                        unique(sort(all_obs$Y_obs)))),
-    column(3,
-           uiOutput("echan"))
-  ),
+  tags$style(type = "text/css", "#map {height: calc(100vh) !important;}", HTML("#controls {background-color: rgba(0,0,0,0.2)}") ),
+  leafletOutput("map"),
+  absolutePanel(id = "controls",
+                class = "panel panel-default",
+               fixed = FALSE,
+                draggable = FALSE,
+                top = 0,
+                left = "auto",
+                right = 20,
+                bottom = "auto",
+                width = 330,
+                height = "auto",
+    selectInput("an",
+                "Année d'échantillonnage des sites",
+                unique(sort(all_obs$Y_obs))),
+    uiOutput("echan"),
+    h3("Conditions abiotiques du site sélectionné"),
+    plotOutput("condAb"))),
   fluidRow(
-    column(5,
-           "Description site",
-           fluidRow(
-             column(12,
-                    "Conditions abiotiques",
-                    plotOutput("condAb"))
-           )
-    )
-    ,
-    column(7,
-           leafletOutput("map"))
-    
-    
-  ),
-  fluidRow(
-    column(6,
-           "Répartition type espèce",
-           plotOutput("waff")),
-           #textOutput("waff")),
-    
-    column(6,
-           dataTableOutput("donnees"))
+      column(6,
+             "Répartition type espèce",
+             plotOutput("waff")),
+      #textOutput("waff")),
 
-  ),
+      column(6,
+             dataTableOutput("donnees"))
+
+    ),
   fluidRow(
-    downloadButton("DL_data", "Télécharger")
+    downloadButton("DL_data", "Télécharger"))
   )
-  
-)
 
-# ---------------------------------------------------- #
-# ---------------------------------------------------- #
+# -------------------------------------------------------- #
+# ------------ When the magic happens -------------------- #
+# -------------------------------------------------------- #
 
 server <- function(input, output, session) {
   
@@ -71,9 +66,10 @@ server <- function(input, output, session) {
   
   # -------- # 
   # Map output 
-  output$map <- renderLeaflet({
+  output$map <- renderLeaflet({width = "100%"
+                               height = 400
     if(input$type_ech == "Tous"){
-
+      
       
       leaflet() %>%
         addTiles() %>% # Affichage du fond de carte
@@ -83,11 +79,11 @@ server <- function(input, output, session) {
                          popup = obs_an()$popup_info, # Ajout de fenêtres pop-up
                          color = obs_an()$col,
                          layerId = obs_an()$site_code)
-
-
-
-      } else {
-
+      
+      
+      
+    } else {
+      
       leaflet() %>%
         addTiles() %>% # Affichage du fond de carte
         addCircleMarkers(lng = obs_an()$long_site[obs_an()$type_ech == input$type_ech], # Positionnement des sites avec les coordonnées long/lat
@@ -96,13 +92,13 @@ server <- function(input, output, session) {
                          popup = obs_an()$popup_info[obs_an()$type_ech == input$type_ech], # Ajout de fenêtres pop-up
                          color = unique(obs_an()$col[obs_an()$type_ech == input$type_ech]),
                          layerId = obs_an()$site_code[obs_an()$type_ech == input$type_ech])
-
+      
     }
-        
-      })
-      # ---------------------- #
-      # Click on a map marker #
-      # --------------------- #
+    
+  })
+  # ---------------------- #
+  # Click on a map marker #
+  # --------------------- #
   
   # 
   observe({ 
@@ -110,15 +106,17 @@ server <- function(input, output, session) {
     event <- input$map_marker_click
     
     # Obtention de la description du site et des conditions météorologiques
-    # ---------------------------------------------------------------------
-    # ... 
+    output$condAb <- renderPlot({
+      par(bg = "transparent")
+      plot(iris$Sepal.Length, type = "l" )
+    })
     
     # Obtention de la liste des espèces observées lors de l'échantillonnage
     #----------------------------------------------------------------------
-
-   message <- obs_an()[obs_an()$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
-   message <- message %>% arrange(obs_species.taxa_name)
-   
+    
+    message <- obs_an()[obs_an()$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
+    message <- message %>% arrange(obs_species.taxa_name)
+    
     output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
                                       options = list(pageLength = 10))
     
@@ -128,29 +126,29 @@ server <- function(input, output, session) {
     wa <- plyr::count(obs_an()$type[obs_an()$site_code == event$id])
     
     output$waff <- renderPlot({
-    ggplot(wa, aes(fill = x, values = freq)) +
-      geom_waffle(color = "white", size = 1.125, n_rows = 6) +
-      coord_equal() +
-      #labs(
-      #title = paste("Site", input$site, sep = " ")
-      #) +
-      theme_ipsum_rc(grid="") +
-      theme_enhance_waffle()
+      ggplot(wa, aes(fill = x, values = freq)) +
+        geom_waffle(color = "white", size = 1.125, n_rows = 6) +
+        coord_equal() +
+        #labs(
+        #title = paste("Site", input$site, sep = " ")
+        #) +
+        theme_ipsum_rc(grid="") +
+        theme_enhance_waffle()
     })
-      
+    
     # Obtention des données à télécharger
     # -----------------------------------
-
-  output$DL_data <- downloadHandler(
-    filename = function() {
-      paste(event$id, paste("_", unique(obs_an()$Y_obs[obs_an()$site_code == event$id]), sep = ""), '.csv', sep="")
-    },
-    content = function(file) {
-      write.csv(message[!duplicated(message$obs_species.taxa_name),], file)
-    }
-  )
+    
+    output$DL_data <- downloadHandler(
+      filename = function() {
+        paste(event$id, paste("_", unique(obs_an()$Y_obs[obs_an()$site_code == event$id]), sep = ""), '.csv', sep="")
+      },
+      content = function(file) {
+        write.csv(message[!duplicated(message$obs_species.taxa_name),], file)
+      }
+    )
   })
-
+  
   
   # n_row_2 <- reactive({
   #   if(input$site == "tous"){
@@ -161,7 +159,7 @@ server <- function(input, output, session) {
   # })
   
   
-
+  
   
 }
 
