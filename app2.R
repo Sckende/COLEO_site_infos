@@ -18,8 +18,8 @@ ui <- fluidPage(#theme = shinytheme("slate"),
     column(3,
            selectInput("an",
                        "Année d'échantillonnage des sites",
-                       #c("toutes", unique(sort(all_obs$Y_creation))))
-                        unique(sort(all_obs$Y_creation)))),
+                       #c("toutes", unique(sort(all_obs$Y_obs))))
+                        unique(sort(all_obs$Y_obs)))),
     column(3,
            uiOutput("echan"))
   ),
@@ -42,11 +42,11 @@ ui <- fluidPage(#theme = shinytheme("slate"),
     column(6,
            "Répartition type espèce",
            plotOutput("waff")),
+           #textOutput("waff")),
+    
     column(6,
            dataTableOutput("donnees"))
-           #textOutput("donnees"))
-           #tableOutput("donnees"))
-    
+
   ),
   fluidRow(
     downloadButton("DL_data", "Télécharger")
@@ -63,18 +63,17 @@ server <- function(input, output, session) {
   # Listes déroulantes avec années, puis les types d'échantillonnage correspondants - Listes reliées
   
   obs_an = reactive({
-    all_obs[all_obs$Y_creation == input$an,]
+    all_obs[all_obs$Y_obs == input$an,]
   })
   output$echan <- renderUI({
-    selectInput("type_ech", "Type d'échantill", c("Tous", sort(unique(obs_an()$type_ech))))
+    selectInput("type_ech", "Type d'échantillonnage", c("Tous", sort(unique(obs_an()$type_ech))))
   })
   
   # -------- # 
   # Map output 
   output$map <- renderLeaflet({
     if(input$type_ech == "Tous"){
-      
-      #data_obs <- all_obs %>% filter(Y_creation == obs_an()$Y_creation)
+
       
       leaflet() %>%
         addTiles() %>% # Affichage du fond de carte
@@ -87,108 +86,82 @@ server <- function(input, output, session) {
 
 
 
-      }
-   # else{
-    #   
-    #   data_obs <- all_sites %>% filter(Y_creation == obs_an()$Y_creation, type == input$type_ech)
-    #   
-    #   leaflet() %>%
-    #     addTiles() %>% # Affichage du fond de carte
-    #     addCircleMarkers(lng = data_obs$long_site, # Positionnement des sites avec les coordonnées long/lat
-    #                      lat = data_obs$lat_site,
-    #                      radius = 8, # taille du cercle
-    #                      popup = data_obs$popup_info, # Ajout de fenêtres pop-up
-    #                      color = unique(data_obs$col))
-    #   
-    # }
+      } else {
+
+      leaflet() %>%
+        addTiles() %>% # Affichage du fond de carte
+        addCircleMarkers(lng = obs_an()$long_site[obs_an()$type_ech == input$type_ech], # Positionnement des sites avec les coordonnées long/lat
+                         lat = obs_an()$lat_site[obs_an()$type_ech == input$type_ech],
+                         radius = 8, # taille du cercle
+                         popup = obs_an()$popup_info[obs_an()$type_ech == input$type_ech], # Ajout de fenêtres pop-up
+                         color = unique(obs_an()$col[obs_an()$type_ech == input$type_ech]),
+                         layerId = obs_an()$site_code[obs_an()$type_ech == input$type_ech])
+
+    }
         
       })
+      # ---------------------- #
+      # Click on a map marker #
+      # --------------------- #
   
-      # Click on a map marker
+  # 
   observe({ 
     
     event <- input$map_marker_click
+    
+    # Obtention de la description du site et des conditions météorologiques
+    # ---------------------------------------------------------------------
+    # ... 
+    
+    # Obtention de la liste des espèces observées lors de l'échantillonnage
+    #----------------------------------------------------------------------
 
-   #message <- head(all_obs[all_obs$site_code == event$id,])
-   message <- all_obs[all_obs$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
-    #message <- head(all_obs[all_obs$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")])
-    #output$donnees <- renderTable(message)
-    output$donnees <- renderDataTable(message,
+   message <- obs_an()[obs_an()$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
+   message <- message %>% arrange(obs_species.taxa_name)
+   
+    output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
                                       options = list(pageLength = 10))
-
     
+    # Obtention du waffle plot pour la répartition du type d'espèces observées
+    # ------------------------------------------------------------------------
     
-  })
-
-  
-  # -------- # 
-  output$condAb <- renderPlot(
-    plot(iris$Sepal.Length, type = "l")
-  )
-  
-  
-  # -------- # 
-  # Espèces par site #
-  # ------- #
-  
-  # Waffle plot 
-  
-  xdf <- reactive({
-    if(input$site == "tous"){
-      all_obs %>%
-        count(type)
-    } else {
-      all_obs %>%
-        filter(site_code == input$site) %>%
-        count(type)
-    }
-  })   
-  n_row_2 <- reactive({
-    if(input$site == "tous"){
-      60
-    } else {
-      6
-    }
-  })
-  
-  output$waff <- renderPlot({
-    ggplot(xdf(), aes(fill = type, values = n)) +
-      geom_waffle(color = "white", size = 1.125, n_rows = n_row_2()) +
+    wa <- plyr::count(obs_an()$type[obs_an()$site_code == event$id])
+    
+    output$waff <- renderPlot({
+    ggplot(wa, aes(fill = x, values = freq)) +
+      geom_waffle(color = "white", size = 1.125, n_rows = 6) +
       coord_equal() +
       #labs(
       #title = paste("Site", input$site, sep = " ")
       #) +
       theme_ipsum_rc(grid="") +
       theme_enhance_waffle()
-  })
-  
-  
-  # Tableau de données #  
-  
-  # DF_SP <- reactive({
-  #   if(input$site == "tous"){
-  #     DF_SP <- all_obs %>% arrange(obs_species.taxa_name) %>%
-  #       select(obs_species.taxa_name, type) %>% arrange(obs_species.taxa_name)
-  #   } else {
-  #     DF_SP <- all_obs %>% filter(site_code == input$site) %>% 
-  #       select(obs_species.taxa_name, type) %>% arrange(obs_species.taxa_name)
-  #   }
-  # })
-  # output$donnees <- renderDataTable(
-  #   
-  #   DF_SP()[!duplicated(DF_SP()$obs_species.taxa_name),],
-  #   options = list(pageLength = 10)
-  #   
-  # )
-  # -------- #  
+    })
+      
+    # Obtention des données à télécharger
+    # -----------------------------------
+
   output$DL_data <- downloadHandler(
     filename = function() {
-      paste(input$site, paste("_", Sys.Date(), sep = ""), '.csv', sep="")
+      paste(event$id, paste("_", unique(obs_an()$Y_obs[obs_an()$site_code == event$id]), sep = ""), '.csv', sep="")
     },
     content = function(file) {
-      write.csv(DF_SP()[!duplicated(DF_SP()$obs_species.taxa_name),], file)
+      write.csv(message[!duplicated(message$obs_species.taxa_name),], file)
     }
   )
+  })
+
+  
+  # n_row_2 <- reactive({
+  #   if(input$site == "tous"){
+  #     60
+  #   } else {
+  #     6
+  #   }
+  # })
+  
+  
+
   
 }
 
