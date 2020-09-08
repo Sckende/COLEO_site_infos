@@ -27,7 +27,7 @@ names(all_sites)
 all_sites <- all_sites %>% 
   separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
-# Association d'une couleur par habitat
+# Association d'une couleur par type d'échantillonnage
 all_sites$col <- c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(all_sites$type))]
 
 # Creation de pop-ups 
@@ -41,7 +41,7 @@ all_sites <- all_sites %>%
                              "<b> code_site</b> ",
                              site_code,
                              "<br/>",
-                             "<b> type_habitat</b> ",
+                             "<b> type_echantillonnage</b> ",
                              type,
                              "<br/>",
                              "<b> annee_creation</b> ",
@@ -63,9 +63,9 @@ all_obs <- all_obs %>%
   separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
 
-# Récupération des lat/long de chaque site dans le DF des observations
+# Récupération des lat/long, infos pop-up & type d'échantillonnage de chaque site dans le DF des observations
 
-j <- all_sites %>% select(site_code, lat_site, long_site)
+j <- all_sites %>% select(site_code, lat_site, long_site, popup_info, type_ech = type, col)
 all_obs <- left_join(all_obs, j, by = "site_code")
 
 # Vérification si tous les ensembles de codes des sites, lat & long pour les observations sont contenus dans les ensembles de codes de tous les sites, lat et long par sites
@@ -82,6 +82,7 @@ for(i in all_sites$site_code){
 }
 
 all(x1 %in% x2) # All is fine !
+
 
 
 
