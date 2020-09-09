@@ -6,13 +6,18 @@ library(dplyr)
 library(purrr)
 
 source("functions.R")
+# --------------------------------------------- #
+# Obtention des informations pour tous les sites #
+# --------------------------------------------- #
 
-# Obtention des informations pour tous les sites
+
 all_sites <- get_sites()[[1]][[1]][[1]]
 #utils::View(all_sites)
 names(all_sites)
+# ----------------------------------------------------- #
+# Obtention des coordonnées des sites d'échantillonnage #
+# ----------------------------------------------------- #
 
-# Obtention des coordonnées des sites d'échantillonnage
 #utils::View(all_sites %>% select(
 #  geom.coordinates))
 all_sites$geom.coordinates[[1]]
@@ -46,8 +51,10 @@ all_sites <- all_sites %>%
                              "<br/>",
                              "<b> annee_creation</b> ",
                              Y_creation))
+# ------------------------- #
+# Observations des especes #
+# ------------------------ #
 
-# Observations des especes
 # Utilisation de la fonction de Andrew get_obs_df() - modifiée via retrait de la variable "media", qui est une liste et qui beug avec la fonction xtable(xtable) de la fonction renderTable(Shiny)
 
 all_obs <-get_obs_df()
