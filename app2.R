@@ -34,7 +34,8 @@ ui <- fluidPage(#theme = shinytheme("slate"),
                 unique(sort(all_obs$Y_obs))),
     uiOutput("echan"),
     h3("Conditions abiotiques du site sélectionné"),
-    plotOutput("condAb"))),
+    plotOutput("FakeTemp"),
+    plotOutput("FakePrec"))),
   fluidRow(
       column(6,
              "Répartition type espèce",
@@ -107,12 +108,23 @@ server <- function(input, output, session) {
     event <- input$map_marker_click
     
     # Obtention de la description du site et des conditions météorologiques
-    output$condAb <- renderPlot({
+    output$FakeTemp <- renderPlot({
       par(bg = "transparent")
-      plot(iris$Sepal.Length, type = "l" )
+      
+      cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
+      
+      plot(FakeTemp$Temp[FakeTemp$cell_id == cell], type = "l" )
     })
     
-    # Obtention de la liste des espèces observées lors de l'échantillonnage
+    output$FakePrec <- renderPlot({
+      par(bg = "transparent")
+
+      cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
+
+      barplot(FakePrec$Prec[FakePrec$cell_id == cell])
+    })
+    
+    # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
     #----------------------------------------------------------------------
     
     message <- obs_an()[obs_an()$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
@@ -121,7 +133,7 @@ server <- function(input, output, session) {
     output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
                                       options = list(pageLength = 10))
     
-    # Obtention du waffle plot pour la répartition du type d'espèces observées
+    # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
     # ------------------------------------------------------------------------
     
     wa <- plyr::count(obs_an()$type[obs_an()$site_code == event$id])
