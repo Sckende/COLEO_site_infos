@@ -69,6 +69,9 @@ all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
 all_obs <- all_obs %>% 
   separate(date_obs, c("Y_obs", "M_obs", "DAY_obs"), sep = "-")
 
+# Récupération des "cell_id" pour chaque "site_code"
+all_obs <- dplyr::left_join(all_obs, all_sites[, c(2, 4)], by = "site_code")
+
 
 # Récupération des lat/long, infos pop-up & type d'échantillonnage de chaque site dans le DF des observations
 
@@ -90,6 +93,45 @@ for(i in all_sites$site_code){
 
 all(x1 %in% x2) # All is fine !
 
+#### Fake environmental data ####
+# unique(all_sites$cell_id) = 28, donc création de 28 conditions environnementales différentes
 
+### Fake temperatures - aspect sinusoidal
+# variables
+n <- 100 # number of data points
+t <- seq(from = 0, to = 4*pi, length.out = 100)
+a <- 3
+b <- 0.5
 
+FakeTemp <- NULL
+for(i in 1:28){
+  c.unif <- runif(n)
+  amp <- round(runif(1, 1, 10))
+  col <- i + 1
+  y2 <- a*sin(b*t)+c.unif*amp # uniform error
+  
+  cell_id <- unique(all_sites$cell_id)[i]
+  
+  j <- data.frame(cell_id, Temp = y2)
+  
+  FakeTemp <- rbind(FakeTemp, j)
 
+}
+
+### Fake precipitations
+
+FakePrec <- NULL
+for(i in 1:28){
+  
+  p <- runif(12, 0, 120)
+  cell_id <- unique(all_sites$cell_id)[i]
+  
+  k <- data.frame(cell_id, Prec = p)
+  
+  FakePrec <- rbind(FakePrec, k)
+  
+}
+
+for(i in unique(FakePrec$cell_id)){
+  barplot(FakePrec$Prec[FakePrec$cell_id == i])
+}
