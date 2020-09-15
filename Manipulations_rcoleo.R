@@ -28,9 +28,9 @@ all_sites <- all_sites %>%
          lat_site = do.call("rbind", all_sites$geom.coordinates)[,2])
 names(all_sites)
 
-# Modification de la variable "created_at" pour obtenir l'année de création des sites
+# Modification de la variable "opened_at" pour obtenir l'année de l'ouverture des sites
 all_sites <- all_sites %>% 
-  separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
+  separate(opened_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
 
 # Association d'une couleur par type d'échantillonnage
 all_sites$col <- c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(all_sites$type))]
@@ -50,7 +50,9 @@ all_sites <- all_sites %>%
                              type,
                              "<br/>",
                              "<b> annee_creation</b> ",
-                             Y_creation))
+                             Y_creation,
+                             "<br/>",
+                             "<b>nombre de campagnes</b> "))
 # ------------------------- #
 # Observations des especes #
 # ------------------------ #
