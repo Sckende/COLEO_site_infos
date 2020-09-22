@@ -5,11 +5,11 @@ get_can_ne <- function() {
 
 
 # get observations as a df
-
 get_obs_df <- function(){
   #obs <- rcoleo::get_obs()
-  get_obs_2()
-  obs_df <- obs[[1]] %>% map("body") %>% map_df(~ select(.x, -c(closed_at, media)))
+  obs <- get_obs_2()
+  # obs_df <- obs[[1]] %>% map("body") %>% map_df(~ select(.x, -c(closed_at, media)))
+  obs_df <- do.call("rbind.fill", obs[[1]])[,-16]
   return(obs_df)
 }
 
