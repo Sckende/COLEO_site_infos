@@ -16,7 +16,8 @@ source("Manipulations_rcoleo.R")
 # Define UI for application that draws a histogram
 ui <- fluidPage(#theme = shinytheme("slate"),
   fluidRow(
-  tags$style(type = "text/css", "#map {height: calc(100vh) !important;}", HTML("#controls {background-color: rgba(0,0,0,0.2)}") ),
+  tags$style(type = "text/css", "#map {height: calc(100vh) !important;}", HTML("#controls {background-color: rgba(0,0,0,0.2); font-color: rgba(1,1,1,0)}")),
+    # tags$style(type = "text/css", "#map {height: calc(100vh) !important;}", HTML("#controls {background-color: rgba(0,0,0); opacity: 0.2}") ),
   leafletOutput("map"),
   absolutePanel(id = "controls",
                 class = "panel panel-default",
@@ -34,11 +35,11 @@ ui <- fluidPage(#theme = shinytheme("slate"),
                 unique(sort(all_obs$Y_obs))),
     uiOutput("echan"),
     h3("Conditions abiotiques du site sélectionné"),
-    plotOutput("FakeTemp"),
-    plotOutput("FakePrec"))),
+    plotOutput("FakeTemp", height = 230),
+    plotOutput("FakePrec", height = 250))),
   fluidRow(
       column(6,
-             "Répartition type espèce",
+             "Répartition type d'échantillonnage",
              plotOutput("waff")),
       #textOutput("waff")),
 
@@ -63,7 +64,7 @@ server <- function(input, output, session) {
     all_obs[all_obs$Y_obs == input$an,]
   })
   output$echan <- renderUI({
-    selectInput("type_ech", "Type d'échantillonnage", c("Tous", sort(unique(obs_an()$type_ech))))
+    selectInput("type_ech", "Type d'habitat", c("Tous", sort(unique(obs_an()$type_ech))))
   })
   
   # -------- # 
@@ -108,29 +109,51 @@ server <- function(input, output, session) {
     event <- input$map_marker_click
     
     # Obtention de la description du site et des conditions météorologiques
+
     output$FakeTemp <- renderPlot({
+
+       if (is.null(event))
+         return(NULL)
+
       par(bg = "transparent")
-      
       cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
       
-      plot(FakeTemp$Temp[FakeTemp$cell_id == cell], type = "l" )
+      plot(FakeTemp$Temp[FakeTemp$cell_id == cell],
+           type = "l",
+           bty = "n",
+           xlim = c(1,108),
+           xlab = "Time",
+           ylab = "Températures")
     })
     
     output$FakePrec <- renderPlot({
+      
+      
+      if (is.null(event))
+        return(NULL)
+      
       par(bg = "transparent")
 
       cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
 
-      barplot(FakePrec$Prec[FakePrec$cell_id == cell])
+      barplot(FakePrec$Prec[FakePrec$cell_id == cell],
+              xlab = "Time",
+              ylab = "Précipitations cumulées")
     })
     
     # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
     #----------------------------------------------------------------------
     
-    message <- obs_an()[obs_an()$site_code == event$id, c("site_code", "opened_at", "obs_species.taxa_name")]
-    message <- message %>% arrange(obs_species.taxa_name)
+    mess <- obs_an()[obs_an()$site_code == event$id, "obs_species.taxa_name"]
+    #message <- message %>% arrange(obs_species.taxa_name)
     
-    output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
+    # message <- obs_an()[obs_an()$site_code == event$id, "obs_species.taxa_name"]
+    message <- data.frame(species = sort(unique(mess)))
+    
+    
+    # output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
+    #                                   options = list(pageLength = 10))
+    output$donnees <- renderDataTable(message,
                                       options = list(pageLength = 10))
     
     # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
@@ -157,7 +180,7 @@ server <- function(input, output, session) {
         paste(event$id, paste("_", unique(obs_an()$Y_obs[obs_an()$site_code == event$id]), sep = ""), '.csv', sep="")
       },
       content = function(file) {
-        write.csv(message[!duplicated(message$obs_species.taxa_name),], file)
+        write.csv(message, file)
       }
     )
   })
