@@ -135,7 +135,7 @@ for(i in 1:28){
 for(i in unique(FakePrec$cell_id)){
   barplot(FakePrec$Prec[FakePrec$cell_id == i])
 }
-=======
+#######
 setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
 
 library(tidyverse)
@@ -275,4 +275,4 @@ for(i in 1:28){
 for(i in unique(FakePrec$cell_id)){
   barplot(FakePrec$Prec[FakePrec$cell_id == i])
 }
->>>>>>> 767425d2e3cc65d4879972c18099f061b41dd199
+
