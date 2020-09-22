@@ -1,4 +1,4 @@
-setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
+setwd("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
 library(shiny)
 library(tidyverse)
 library(rcoleo)
@@ -11,7 +11,7 @@ library(shinydashboard)
 
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
-#source("Manipulations_rcoleo.R")
+source("Manipulations_rcoleo.R")
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(#theme = shinytheme("slate"),
