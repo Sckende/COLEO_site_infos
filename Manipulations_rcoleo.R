@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
+setwd("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
 
 library(tidyverse)
 library(rcoleo)
