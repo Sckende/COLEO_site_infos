@@ -11,7 +11,7 @@ library(shinydashboard)
 
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
-source("Manipulations_rcoleo.R")
+#source("Manipulations_rcoleo.R")
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(#theme = shinytheme("slate"),
