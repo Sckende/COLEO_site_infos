@@ -140,11 +140,12 @@ for(i in unique(FakePrec$cell_id)){
   barplot(FakePrec$Prec[FakePrec$cell_id == i])
 }
 
-#### Indicateurs ####
+#### Indicateurs (= species category) ####
 
 # Association du type de campagne pour chaque observations
 observations <- rcoleo::get_gen("/observations")
 observations <- do.call("rbind.fill", observations[[1]])
+observations <- observations[, c(1, 2, 4, 12, 20:22)]
 
 getCampaigns <- rcoleo::get_campaigns()
 getCampaigns <- do.call("rbind.fill", getCampaigns[[1]])
@@ -152,3 +153,10 @@ getCampaigns <- do.call("rbind.fill", getCampaigns[[1]])
 names(getCampaigns)[1] <- "campaign_id"
 obsCamp <- dplyr::left_join(observations, getCampaigns, by = "campaign_id")
 summary(as.factor(obsCamp$type))
+
+# Association du nom du site où l'observation a eu lieu
+# Association de la catégorie de l'espèce observée
+
+# Nettoyage du DF
+
+
