@@ -7,17 +7,20 @@ library(dplyr)
 library(purrr)
 
 source("functions.R")
-# --------------------------------------------- #
-# Obtention des informations pour tous les sites #
-# --------------------------------------------- #
+
+
+# ----------------------------------------------------- #
+#### Obtention des informations pour tous les sites ####
+# --------------------------------------------------- #
 
 
 all_sites <- get_sites()[[1]][[1]][[1]]
 #utils::View(all_sites)
 names(all_sites)
-# ----------------------------------------------------- #
-# Obtention des coordonnées des sites d'échantillonnage #
-# ----------------------------------------------------- #
+
+# ----------------------------------------------------------- #
+#### Obtention des coordonnées des sites d'échantillonnage ####
+# ----------------------------------------------------------- #
 
 #utils::View(all_sites %>% select(
 #  geom.coordinates))
@@ -52,9 +55,9 @@ all_sites <- all_sites %>%
                              "<br/>",
                              "<b> annee_creation</b> ",
                              Y_creation))
-# ------------------------- #
-# Observations des especes #
-# ------------------------ #
+# ------------------------------- #
+#### Observations des especes ####
+# ----------------------------- #
 
 # Utilisation de la fonction de Andrew get_obs_df() - modifiée via retrait de la variable "media", qui est une liste et qui beug avec la fonction xtable(xtable) de la fonction renderTable(Shiny)
 
@@ -136,3 +139,16 @@ for(i in 1:28){
 for(i in unique(FakePrec$cell_id)){
   barplot(FakePrec$Prec[FakePrec$cell_id == i])
 }
+
+#### Indicateurs ####
+
+# Association du type de campagne pour chaque observations
+observations <- rcoleo::get_gen("/observations")
+observations <- do.call("rbind.fill", observations[[1]])
+
+getCampaigns <- rcoleo::get_campaigns()
+getCampaigns <- do.call("rbind.fill", getCampaigns[[1]])
+
+names(getCampaigns)[1] <- "campaign_id"
+obsCamp <- dplyr::left_join(observations, getCampaigns, by = "campaign_id")
+summary(as.factor(obsCamp$type))
