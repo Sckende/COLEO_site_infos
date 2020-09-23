@@ -32,9 +32,8 @@ all_sites <- all_sites %>%
          lat_site = do.call("rbind", all_sites$geom.coordinates)[,2])
 names(all_sites)
 
-# Modification de la variable "created_at" pour obtenir l'année de création des sites
-all_sites <- all_sites %>% 
-  separate(created_at, c("Y_creation", "M_creation", "others_creation"), sep = "-")
+# Obtention de l'année d'ouverture des sites
+all_sites$open_year <- do.call("rbind",strsplit(all_sites$opened_at, "-"))[,1]
 
 # Association d'une couleur par type d'échantillonnage
 all_sites$col <- c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(all_sites$type))]
@@ -54,50 +53,11 @@ all_sites <- all_sites %>%
                              type,
                              "<br/>",
                              "<b> annee_creation</b> ",
-                             Y_creation))
-# ------------------------------- #
-#### Observations des especes ####
-# ----------------------------- #
-
-# Utilisation de la fonction de Andrew get_obs_df() - modifiée via retrait de la variable "media", qui est une liste et qui beug avec la fonction xtable(xtable) de la fonction renderTable(Shiny)
-
-all_obs <-get_obs_df()
-names(all_obs)
-str(all_obs)
-dim(all_obs)
-
-# Vérification si tous les codes des sites pour les especes observees sont contenus dans la liste de codes de tous les sites existants
-all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
-
-# Modification de la variable "date_obs" pour obtenir l'année des observations effectuées
-all_obs <- all_obs %>% 
-  separate(date_obs, c("Y_obs", "M_obs", "DAY_obs"), sep = "-")
-
-# Récupération des "cell_id" pour chaque "site_code"
-all_obs <- dplyr::left_join(all_obs, all_sites[, c(2, 4)], by = "site_code")
-
-
-# Récupération des lat/long, infos pop-up & type d'échantillonnage de chaque site dans le DF des observations
-
-j <- all_sites %>% select(site_code, lat_site, long_site, popup_info, type_ech = type, col)
-all_obs <- left_join(all_obs, j, by = "site_code")
-
-# Vérification si tous les ensembles de codes des sites, lat & long pour les observations sont contenus dans les ensembles de codes de tous les sites, lat et long par sites
-x1 <- NULL
-for(i in unique(all_obs$site_code)){
-  l <- paste(i, unique(all_obs$long_site[all_obs$site_code == i]), unique(all_obs$lat_site[all_obs$site_code == i]))
-  x1 <- c(x1, l)
-}
-
-x2 <- NULL
-for(i in all_sites$site_code){
-  l <- paste(i, unique(all_sites$long_site[all_sites$site_code == i]), unique(all_sites$lat_site[all_sites$site_code == i]))
-  x2 <- c(x2, l)
-}
-
-all(x1 %in% x2) # All is fine !
-
+                             open_year))
+# ------------------------------ #
 #### Fake environmental data ####
+# ---------------------------- #
+# For each cell
 # unique(all_sites$cell_id) = 28, donc création de 28 conditions environnementales différentes
 
 ### Fake temperatures - aspect sinusoidal
@@ -140,23 +100,85 @@ for(i in unique(FakePrec$cell_id)){
   barplot(FakePrec$Prec[FakePrec$cell_id == i])
 }
 
-#### Indicateurs (= species category) ####
+# ------------------------------- #
+#### Observations des especes ####
+# ----------------------------- #
 
-# Association du type de campagne pour chaque observations
+# via get_gen() directement - Plus rapide
 observations <- rcoleo::get_gen("/observations")
 observations <- do.call("rbind.fill", observations[[1]])
 observations <- observations[, c(1, 2, 4, 12, 20:22)]
 
-getCampaigns <- rcoleo::get_campaigns()
-getCampaigns <- do.call("rbind.fill", getCampaigns[[1]])
+# Association du type de campagne pour chaque observations
+  # Préparation du DF campaigns
+campaigns <- rcoleo::get_gen("/campaigns") # Identique à rcoleo::get_campaigns()
+campaigns <- do.call("rbind.fill", campaigns[[1]])
+campaigns <- campaigns[, c(1:3, 5, 6)]
+names(campaigns)[c(1, 3:5)] <- c("campaign_id", "campaign_type", "campaign_opened_at", "campaign_closed_at")
 
-names(getCampaigns)[1] <- "campaign_id"
-obsCamp <- dplyr::left_join(observations, getCampaigns, by = "campaign_id")
-summary(as.factor(obsCamp$type))
+  # Tables joining
+obsCamp <- dplyr::left_join(observations, campaigns, by = "campaign_id")
+summary(obsCamp)
 
+obsCamp <-cbind(obsCamp[,c(1, 4, 7, 8)],(apply(obsCamp[, c(2, 3, 5, 6, 9:11)], 2, as.factor)))
+summary(obsCamp)
+
+# Association avec le type d'indicateurs (= species category)
+getSpecies <- rcoleo::get_species() 
+getSpecies <- do.call("rbind.fill", getSpecies[[1]])
+
+#all(unique(obsCamp$obs_species.taxa_name) %in% unique(getSpecies$name))
+
+names(obsCamp)[7] <- "name"
+obsCampCat <- dplyr::left_join(obsCamp, getSpecies[, 1:4], by = "name")
+obsCampCat <- cbind(obsCampCat[, 1:11], (apply(obsCampCat[, 12:14], 2, as.factor)))
 # Association du nom du site où l'observation a eu lieu
-# Association de la catégorie de l'espèce observée
-
+names(all_sites)[1] <- "site_id"
+obsCampCat <- left_join(obsCampCat, all_sites[, c(1, 4)], by = "site_id")
+names(obsCampCat)
 # Nettoyage du DF
+# ---------------- #
+###   BROUILLON ###
+# -------------- #
+# ------------------------------- #
+#### Observations des especes ####
+# ----------------------------- #
 
+# Utilisation de la fonction de Andrew get_obs_df() - modifiée via retrait de la variable "media", qui est une liste et qui beug avec la fonction xtable(xtable) de la fonction renderTable(Shiny)
+
+all_obs <-get_obs_df()
+names(all_obs)
+str(all_obs)
+dim(all_obs)
+
+# Vérification si tous les codes des sites pour les especes observees sont contenus dans la liste de codes de tous les sites existants
+all(unique(all_obs$site_code) %in% unique(all_sites$site_code))
+
+# Modification de la variable "date_obs" pour obtenir l'année des observations effectuées
+all_obs <- all_obs %>% 
+  separate(date_obs, c("Y_obs", "M_obs", "DAY_obs"), sep = "-")
+
+# Récupération des "cell_id" pour chaque "site_code"
+all_obs <- dplyr::left_join(all_obs, all_sites[, c(2, 4)], by = "site_code")
+
+
+# Récupération des lat/long, infos pop-up & type d'échantillonnage de chaque site dans le DF des observations
+
+j <- all_sites %>% select(site_code, lat_site, long_site, popup_info, type_ech = type, col)
+all_obs <- left_join(all_obs, j, by = "site_code")
+
+# Vérification si tous les ensembles de codes des sites, lat & long pour les observations sont contenus dans les ensembles de codes de tous les sites, lat et long par sites
+x1 <- NULL
+for(i in unique(all_obs$site_code)){
+  l <- paste(i, unique(all_obs$long_site[all_obs$site_code == i]), unique(all_obs$lat_site[all_obs$site_code == i]))
+  x1 <- c(x1, l)
+}
+
+x2 <- NULL
+for(i in all_sites$site_code){
+  l <- paste(i, unique(all_sites$long_site[all_sites$site_code == i]), unique(all_sites$lat_site[all_sites$site_code == i]))
+  x2 <- c(x2, l)
+}
+
+all(x1 %in% x2) # All is fine !
 
