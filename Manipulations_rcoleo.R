@@ -142,11 +142,19 @@ all_obs <- cbind(obsCampCat[, c(1:14, 18, 21, 22, 24, 25)], (apply(obsCampCat[, 
 # Nettoyage du DF
   # Noms de variables
 names(all_obs)[c(3, 7, 15, 21:25)] <- c("species_value", "species_value_type", "cell_id", "hab_type", "site_open_at", "cell_name", "cell_code", "site_open_year")
+all_obs$hab_type <- as.character(all_obs$hab_type)
   
   # Année d'observations
 
 all_obs$obs_year <- as.factor(do.call("rbind",strsplit(as.character(all_obs$date_obs), "-"))[,1])
 
+# ------------------------------------------------ #
+#### Compte des différents types d'indicateurs ####
+# ---------------------------------------------- #
+
+indic_count <- count(as.character(all_obs$category))
+indic_count$prop <- round((indic_count$freq * 100)/sum(indic_count$freq), digits = 0)
+names(indic_count)[1] <- "indic"
 
 # ---------------- #
 ###   BROUILLON ###
