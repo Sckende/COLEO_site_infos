@@ -33,7 +33,7 @@ ui <- fluidPage(#theme = shinytheme("slate"),
                 height = 665,
     selectInput("an",
                 "Année d'échantillonnage des sites",
-                unique(sort(all_obs$Y_obs))),
+                unique(sort(all_obs$obs_year))),
     uiOutput("echan"),
     h3("Conditions abiotiques du site sélectionné"),
     plotOutput("FakeTemp", height = 230),
@@ -62,17 +62,17 @@ server <- function(input, output, session) {
   # Listes déroulantes avec années, puis les types d'échantillonnage correspondants - Listes reliées
   
   obs_an = reactive({
-    all_obs[all_obs$Y_obs == input$an,]
+    all_obs[all_obs$obs_year == input$an,]
   })
   output$echan <- renderUI({
-    selectInput("type_ech", "Type d'habitat", c("Tous", sort(unique(obs_an()$type_ech))))
+    selectInput("hab_type", "Type d'habitat", c("Tous", sort(unique(obs_an()$hab_type))))
   })
   
   # -------- # 
   # Map output 
   output$map <- renderLeaflet({width = "100%"
                                height = 400
-    if(input$type_ech == "Tous"){
+    if(input$hab_type == "Tous"){
       
       
       leaflet() %>%
@@ -90,12 +90,12 @@ server <- function(input, output, session) {
       
       leaflet() %>%
         addTiles() %>% # Affichage du fond de carte
-        addCircleMarkers(lng = obs_an()$long_site[obs_an()$type_ech == input$type_ech], # Positionnement des sites avec les coordonnées long/lat
-                         lat = obs_an()$lat_site[obs_an()$type_ech == input$type_ech],
+        addCircleMarkers(lng = obs_an()$long_site[obs_an()$hab_type == input$hab_type], # Positionnement des sites avec les coordonnées long/lat
+                         lat = obs_an()$lat_site[obs_an()$hab_type == input$hab_type],
                          radius = 8, # taille du cercle
-                         popup = obs_an()$popup_info[obs_an()$type_ech == input$type_ech], # Ajout de fenêtres pop-up
-                         color = unique(obs_an()$col[obs_an()$type_ech == input$type_ech]),
-                         layerId = obs_an()$site_code[obs_an()$type_ech == input$type_ech])
+                         popup = obs_an()$popup_info[obs_an()$hab_type == input$hab_type], # Ajout de fenêtres pop-up
+                         color = unique(obs_an()$col[obs_an()$hab_type == input$hab_type]),
+                         layerId = obs_an()$site_code[obs_an()$hab_type == input$hab_type])
       
     }
     
@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
     #----------------------------------------------------------------------
     
-    mess <- obs_an()[obs_an()$site_code == event$id, "obs_species.taxa_name"]
+    mess <- obs_an()[obs_an()$site_code == event$id, "name"]
     #message <- message %>% arrange(obs_species.taxa_name)
     
     # message <- obs_an()[obs_an()$site_code == event$id, "obs_species.taxa_name"]
@@ -160,7 +160,7 @@ server <- function(input, output, session) {
     # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
     # ------------------------------------------------------------------------
     
-    wa <- plyr::count(obs_an()$type[obs_an()$site_code == event$id])
+    wa <- plyr::count(obs_an()$category[obs_an()$site_code == event$id])
     
     output$waff <- renderPlot({
       ggplot(wa, aes(fill = x, values = freq)) +
@@ -178,7 +178,7 @@ server <- function(input, output, session) {
     
     output$DL_data <- downloadHandler(
       filename = function() {
-        paste(event$id, paste("_", unique(obs_an()$Y_obs[obs_an()$site_code == event$id]), sep = ""), '.csv', sep="")
+        paste(event$id, paste("_", unique(obs_an()$obs_year[obs_an()$site_code == event$id]), sep = ""), '.csv', sep="")
       },
       content = function(file) {
         write.csv(message, file)
