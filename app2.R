@@ -40,7 +40,7 @@ ui <- fluidPage(#theme = shinytheme("slate"),
     plotOutput("FakePrec", height = 250))),
   fluidRow(
       column(6,
-             "Répartition type d'échantillonnage",
+             "",
              plotOutput("waff")),
       #textOutput("waff")),
 
@@ -159,18 +159,31 @@ server <- function(input, output, session) {
     
     # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
     # ------------------------------------------------------------------------
-    
+
     wa <- plyr::count(obs_an()$category[obs_an()$site_code == event$id])
     
     output$waff <- renderPlot({
-      ggplot(wa, aes(fill = x, values = freq)) +
-        geom_waffle(color = "white", size = 1.125, n_rows = 6) +
-        coord_equal() +
-        #labs(
-        #title = paste("Site", input$site, sep = " ")
-        #) +
-        theme_ipsum_rc(grid="") +
-        theme_enhance_waffle()
+      if(is.null(event$id)){
+        
+        ggplot(indic_count, aes(fill = indic, values = prop)) +
+          geom_waffle(color = "white", size=1.125, n_rows = 10) +
+          coord_equal() +
+          labs(title = "Proportion d'indicateurs", fill = "Catégories") +
+          theme_ipsum_rc(grid="") +
+          theme_enhance_waffle()
+        
+      } else {
+        
+        ggplot(wa, aes(fill = x, values = freq)) +
+          geom_waffle(color = "white", size = 1.125, n_rows = 6) +
+          coord_equal() +
+          #labs(
+          #title = paste("Site", input$site, sep = " ")
+          #) +
+          theme_ipsum_rc(grid="") +
+          theme_enhance_waffle()
+        
+      }
     })
     
     # Obtention des données à télécharger
