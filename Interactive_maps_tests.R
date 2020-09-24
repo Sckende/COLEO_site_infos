@@ -14,7 +14,7 @@ library(dplyr)
 source("functions.R")
 source("Manipulations_rcoleo.R")
 
-### ---------------LEAFLET TESTS ------------------------- ###
+#### ---------------LEAFLET TESTS ------------------------- ####
 
 
 leaflet() %>% 
@@ -25,52 +25,75 @@ leaflet() %>%
                    popup = j$popup_info, # Ajout de fenêtres pop-up
                    color = c("#66CC00", "#000066", "#666600", "#003333", "#0066CC", "#FF9900", "#660000")[as.integer(as.factor(j$type))])
 
-### -------------- INTERACTIVE WAFFLE PLOT TESTS ---------------- ###
+#### -------------- INTERACTIVE WAFFLE PLOT TESTS ---------------- ####
 
-### TEST 1
-#----------
-# library(waffle)
-# packageVersion("waffle")
-# library(magrittr)
-# library(hrbrthemes)
-# library(ggplot2)
-# library(dplyr)
-# 
-# xdf <- iris %>% count(Species)
-# class(w)
-
-
-storms %>% 
-  filter(year == 2010) %>% 
-  count(status)
-
-all_obs %>%  filter(site_code == "142_111_F01") %>% count(type) -> xdf
+#### TEST 1 - Proportion des différentes catégories d'indicateurs dans toute la BDD ####
+# ----------- #
 
 library(hrbrthemes)
 library(waffle)
 library(tidyverse)
+if(!exists("all_obs")) source("Manipulations_rcoleo.R")
 
-# tibble(
-#   parts = factor(rep(month.abb[1:3], 3), levels=month.abb[1:3]),
-#   values = c(10, 20, 30, 6, 14, 40, 30, 20, 10),
-#   fct = c(rep("Thing 1", 3), rep("Thing 2", 3), rep("Thing 3", 3))
-# ) -> xdf
+xdf <- count(as.character(all_obs$category))
+xdf$prop <- round((xdf$freq * 100)/sum(xdf$freq), digits = 0)
 
-ggplot(xdf, aes(fill=type, values=n)) +
-  geom_waffle(color = "white", size=1.125, n_rows = 6) +
-  #facet_wrap(~fct, ncol=1) +
- # scale_x_discrete(expand=c(0,0)) +
- # scale_y_discrete(expand=c(0,0)) +
- # ggthemes::scale_fill_tableau(name=NULL) +
+ggplot(xdf, aes(fill=x, values=prop)) +
+  geom_waffle(color = "white", size=1.125, n_rows = 10) +
   coord_equal() +
-  labs(
-    title = "Faceted Waffle Geoms"
-  ) +
+  labs(title = "Proportion d'indicateurs", fill = "Catégories") +
   theme_ipsum_rc(grid="") +
   theme_enhance_waffle()
 
-# TEST 2
-# ------
+#### TEST 1 - Représentation des catégories présentes sur un site par rapport au reste de la BDD ####
+
+# EXAMPLE #
+# https://stackoverflow.com/questions/52741666/creating-a-waffle-plot-together-with-facets-in-ggplot2
+
+data("mtcars")
+source("waffle_functions.R")
+
+mtcars$gear_vs <- paste(mtcars$gear, mtcars$vs, sep = "-")
+mtcars$carb <- factor(mtcars$carb)
+x <- mtcars %>% group_by(carb) %>% dplyr::summarise(value = sum(hp))
+
+waffle_chart(x, fill = "carb", value = "value")
+
+x1 <- mtcars %>% group_by(gear_vs, carb) %>% dplyr::summarise(value = sum(hp))
+
+waffle_chart(x1, fill = "carb", facet = "gear_vs", value = "value")
+
+## You can also scale the waffles to a maximum hp in gear_vs
+
+y <- x1 %>% group_by(gear_vs) %>% dplyr::summarise(value = sum(value))
+
+waffle_chart(x1, fill = "carb", facet = "gear_vs", value = "value", composition = FALSE, max_value = max(y$value))
+
+# ----------- #
+# Exemple pour le site 135_104_F01 #
+# ----------------- #
+
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
+site_count <- dplyr::left_join(site_count, xdf, by = "x")
+names(site_count) <- c("category", "freq_site", "freq_tot", "prop_tot")
+site_count$prop_siteVStot <- round(site_count$freq_site/site_count$freq_tot*site_count$prop_tot, digits = 1)
+
+waffle_chart(data = site_count, fill = "category", value = "freq_site")
+
+newDF <- as.data.frame(rbind(as.matrix(site_count[, c(1, 2)]), as.matrix(site_count[, c(1, 3)])))
+names(newDF)[2] <- "freq"
+newDF$data <- c(rep("site", length(unique(site_count$category))), rep("totale", length(unique(site_count$category))))
+newDF$freq <- as.numeric(as.character(newDF$freq))
+summary(newDF)
+
+d <- newDF[newDF$category == "plantes",]
+waffle_chart(data = d, fill = "data", value = "freq")
+
+
+waffle_chart(data = newDF, fill = "data", facet = "category", value = "freq")
+
+#### TEST 2 ####
+# ----------- #
 
 library(dplyr)
 library(rvest)
@@ -115,7 +138,7 @@ waffle(vec14, rows = 15, title = "2014 Lok Sabha", colors = colors14) %>%
   add_legend( x = "0%", width = "100%", orderRule = "vec14")
 
 
-### --------- OVERLAP BETWEEN BARPLOT/HISTOGRAM & LINE PLOT ----------------- ###
+#### --------- OVERLAP BETWEEN BARPLOT/HISTOGRAM & LINE PLOT ----------------- ####
 
 g <- CO2 %>% sample_n(12) 
 
