@@ -12,6 +12,7 @@ library(shinydashboard)
 
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
+source("waffle_functions.R")
 #source("Manipulations_rcoleo.R")
 
 # Define UI for application that draws a histogram
@@ -160,28 +161,37 @@ server <- function(input, output, session) {
     # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
     # ------------------------------------------------------------------------
 
-    wa <- plyr::count(obs_an()$category[obs_an()$site_code == event$id])
+    site_count <- plyr::count(obs_an()$category[obs_an()$site_code == event$id])
+    names(site_count)[1] <- "category"
+    site_count <- dplyr::left_join(site_count, indic_count, by = "category")
+    names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
+    site_count$prop_siteVStot <- round(site_count$freq_site/site_count$freq_tot*site_count$prop_tot, digits = 1)
+    
+    newDF <- as.data.frame(rbind(as.matrix(site_count[, c(1, 2,5)]), as.matrix(site_count[, c(1, 3, 5)])))
+    names(newDF)[2] <- "freq"
+    newDF$data <- c(rep("site", length(unique(site_count$category))), rep("totale", length(unique(site_count$category))))
+    newDF$freq <- as.numeric(as.character(newDF$freq))
+    
+    
     
     output$waff <- renderPlot({
       if(is.null(event$id)){
         
-        ggplot(indic_count, aes(fill = indic, values = prop)) +
-          geom_waffle(color = "white", size=1.125, n_rows = 10) +
-          coord_equal() +
-          labs(title = "Proportion d'indicateurs", fill = "Catégories") +
-          theme_ipsum_rc(grid="") +
-          theme_enhance_waffle()
+        waffle_chart(data = indic_count,
+                     fill = "category",
+                     value = "freq",
+                     fill_colors = as.character(site_count$cat_coul))
         
       } else {
         
-        ggplot(wa, aes(fill = x, values = freq)) +
-          geom_waffle(color = "white", size = 1.125, n_rows = 6) +
-          coord_equal() +
-          #labs(
-          #title = paste("Site", input$site, sep = " ")
-          #) +
-          theme_ipsum_rc(grid="") +
-          theme_enhance_waffle()
+        # ggplot(wa, aes(fill = x, values = freq)) +
+        #   geom_waffle(color = "white", size = 1.125, n_rows = 6) +
+        #   coord_equal() +
+        #   labs(title = "Proportion d'indicateurs", fill = "Catégories") +
+        #   theme_ipsum_rc(grid="") +
+        #   theme_enhance_waffle()
+        
+        waffle_chart(data = newDF, fill = "data", facet = "category", value = "freq", composition = FALSE, max_value = sum(newDF$freq[newDF$data == "totale"]), fill_colors =  c(as.character(unique(site_count$cat_coul))[1], "grey"))
         
       }
     })
