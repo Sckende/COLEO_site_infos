@@ -148,13 +148,32 @@ all_obs$hab_type <- as.character(all_obs$hab_type)
 
 all_obs$obs_year <- as.factor(do.call("rbind",strsplit(as.character(all_obs$date_obs), "-"))[,1])
 
+
+  # Couleur par type d'indicateur
+cat_unik <- as.character(unique(all_obs$category))
+cat_unik <- cat_unik[!is.na(cat_unik)] # Retrait des NA
+
+RColorBrewer::display.brewer.pal(n = length(cat_unik), name = 'Dark2')
+RColorBrewer::display.brewer.pal(n = length(cat_unik), name = 'Spectral')
+
+    # Spécification de couleur hexadécimale 
+
+
+RColorBrewer::brewer.pal(n = length(cat_unik), name = "Dark2")
+
+coul <- data.frame(RColorBrewer::brewer.pal(n = length(cat_unik), name = "Dark2"), sort(cat_unik))
+names(coul) <- c("cat_coul", "category")
+all_obs <-  dplyr::left_join(all_obs, coul, by = "category")
+
 # ------------------------------------------------ #
 #### Compte des différents types d'indicateurs ####
 # ---------------------------------------------- #
 
-indic_count <- count(as.character(all_obs$category))
+indic_count <- plyr::count(as.character(all_obs$category))
 indic_count$prop <- round((indic_count$freq * 100)/sum(indic_count$freq), digits = 0)
-names(indic_count)[1] <- "indic"
+names(indic_count)[1] <- "category"
+indic_count <- na.omit(indic_count)
+indic_count <- dplyr::left_join(indic_count, coul, by = "category")
 
 # ---------------- #
 ###   BROUILLON ###
