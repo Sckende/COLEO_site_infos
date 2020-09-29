@@ -90,6 +90,7 @@ waffleize <- function(dt, fill, value, composition = TRUE, max_value = NULL, dig
 #' @param fill_title character giving the title for the color legend.
 #' @param base_size numeric giving the base size for the plot. See \code{\link[ggplot2]{theme_void}}.
 #' @param legend.position character specifying the position of the legend. See \code{\link[ggplot2]{ggtheme}}.
+#' @param plot.title character giving the title for the waffle plot.
 #' @details The waffle charts are read from left to right (like text) and from bottom upwards (like water glass). The cells indicate 1\% of the maximum value (100% if \code{composition = TRUE} else \code{max_value}). The cells are divided vertically to fractions specifies by the \code{digits} argument. 
 #' @return Returns a \link[ggplot2]{ggplot2} waffle plot
 #' @import ggplot2 dplyr
@@ -97,8 +98,8 @@ waffleize <- function(dt, fill, value, composition = TRUE, max_value = NULL, dig
 #' @author Mikko Vihtakari with code ideas from \href{https://github.com/hrbrmstr/waffle}{hrbrmstr} and \href{https://github.com/liamgilbey/ggwaffle}{Liam Gilbey}
 #' @export
 
-# data = dt; fill = "variable"; value = "value"; facet = NULL; composition = TRUE; max_value = NULL; digits = 3; fill_colors = NULL; fill_title = NULL; ncol = NULL; base_size = 12; legend.position = "bottom"
-waffle_chart <- function(data, fill, value = "value", facet = NULL, composition = TRUE, max_value = NULL, digits = 3, fill_colors = NULL, fill_title = NULL, ncol = NULL, base_size = 12, legend.position = "bottom") {
+# data = dt; fill = "variable"; value = "value"; facet = NULL; composition = TRUE; max_value = NULL; digits = 3; fill_colors = NULL; fill_title = NULL; ncol = NULL; base_size = 12; legend.position = "bottom"; plot.title = NULL
+waffle_chart <- function(data, fill, value = "value", facet = NULL, composition = TRUE, max_value = NULL, digits = 3, fill_colors = NULL, fill_title = NULL, ncol = NULL, base_size = 12, legend.position = "bottom", plot.title = NULL) {
   
   ## White 1% grid
   
@@ -115,6 +116,7 @@ waffle_chart <- function(data, fill, value = "value", facet = NULL, composition 
       geom_rect(data = waffle_data, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = variable)) + 
       geom_rect(data = grid_data, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), fill = NA, color = "white") +
       coord_equal(expand = FALSE) + 
+      labs(title = plot.title) +
       theme_void()
     
     ## ####
@@ -129,6 +131,7 @@ waffle_chart <- function(data, fill, value = "value", facet = NULL, composition 
       geom_rect(data = grid_data, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), fill = NA, color = "white") +
       facet_wrap(facet, ncol = ncol) + 
       coord_equal(expand = FALSE) + 
+      labs(title = plot.title) +
       theme_void()
     
     ## ####
