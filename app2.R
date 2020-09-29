@@ -163,7 +163,7 @@ server <- function(input, output, session) {
     # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
     # ------------------------------------------------------------------------
 
-    site_count <- plyr::count(obs_an()$category[obs_an()$site_code == event$id])
+    site_count <- na.omit(plyr::count(obs_an()$category[obs_an()$site_code == event$id]))
     names(site_count)[1] <- "category"
     site_count <- dplyr::left_join(site_count, indic_count, by = "category")
     names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
@@ -185,26 +185,13 @@ server <- function(input, output, session) {
                      legend.position = "right")
         
       } else {
+        if (length(unique(site_count$category == 1))){
+          waffle_chart(data = site_count,
+                       fill = "data",
+                       value = "freq",
+                       fill_colors = c(as.character(unique(site_count$cat_coul)), "grey"))
+        } else {
         
-        # ggplot(wa, aes(fill = x, values = freq)) +
-        #   geom_waffle(color = "white", size = 1.125, n_rows = 6) +
-        #   coord_equal() +
-        #   labs(title = "Proportion d'indicateurs", fill = "Catégories") +
-        #   theme_ipsum_rc(grid="") +
-        #   theme_enhance_waffle()
-        
-        # waffle_chart(data = site_count,
-        #              fill = "data",
-        #              facet = "category",
-        #              value = "freq",
-        #              composition = FALSE,
-        #              max_value = sum(site_count$freq[site_count$data == "totale"]),
-        #              base_size = 20,
-        #              plot.title = paste("Proportion des indicateurs sur le site", unique(obs_an()$site_id), sep = " "),
-        #              fill_title = "Indicateurs",
-        #              fill_colors =  c(as.character(unique(site_count$cat_coul))[1], "grey"))
-        
-        # Préparation de la liste avec tous les plots
         plot_list <- list()
         
         for (i in 1: length(unique(site_count$category))){
@@ -223,6 +210,7 @@ server <- function(input, output, session) {
         
         multiplot(plotlist = plot_list, cols =  ceiling(length(plot_list)/2))
         
+        }
       }
     })
     
