@@ -13,6 +13,7 @@ library(dplyr)
 
 source("functions.R")
 source("Manipulations_rcoleo.R")
+source("waffle_functions.R")
 
 #### ---------------LEAFLET TESTS ------------------------- ####
 
@@ -27,27 +28,13 @@ leaflet() %>%
 
 #### -------------- INTERACTIVE WAFFLE PLOT TESTS ---------------- ####
 
-#### TEST 1 - Proportion des différentes catégories d'indicateurs dans toute la BDD ####
-# ----------- #
+#### TEST 1 - Proportion des différentes catégories d'indicateurs dans toute la BDD - ggplot2 ####
 
 library(hrbrthemes)
 library(waffle)
 library(tidyverse)
 library(RColorBrewer)
 if(!exists("all_obs")) source("Manipulations_rcoleo.R")
-
-# xdf <- count(as.character(all_obs$category))
-# xdf$prop <- round((xdf$freq * 100)/sum(xdf$freq), digits = 0)
-# names(xdf)[1] <- "category"
-# xdf <- dplyr::left_join(xdf, coul, by = "category")
-# 
-# ggplot(xdf, aes(fill=category, values=prop)) +
-#   geom_waffle(color = "white", size = 1.125, n_rows = 10) +
-#   coord_equal() +
-#   scale_fill_brewer(palette = "Dark2") +
-#   labs(title = "Proportion d'indicateurs", fill = "Catégories") +
-#   theme_ipsum_rc(grid="") + # retrait du contour des pixels
-#   theme_enhance_waffle() # retrait des valeurs en axis et ordonnées
 
 ggplot(indic_count, aes(fill=category, values=prop)) +
   geom_waffle(color = "white", size = 1.125, n_rows = 10) +
@@ -58,14 +45,15 @@ ggplot(indic_count, aes(fill=category, values=prop)) +
   theme_enhance_waffle() # retrait des valeurs en axis et ordonnées
 
 
+#### TEST 2 - Proportion des différentes catégories d'indicateurs dans toute la BDD - wffle_functions + ggplot 2 ####
 
-#### TEST 1 - Représentation des catégories présentes sur un site par rapport au reste de la BDD ####
-
+# ---------- #
 # EXAMPLE #
 # https://stackoverflow.com/questions/52741666/creating-a-waffle-plot-together-with-facets-in-ggplot2
+# ---------- #
 
 data("mtcars")
-source("waffle_functions.R")
+
 
 mtcars$gear_vs <- paste(mtcars$gear, mtcars$vs, sep = "-")
 mtcars$carb <- factor(mtcars$carb)
@@ -83,50 +71,96 @@ y <- x1 %>% group_by(gear_vs) %>% dplyr::summarise(value = sum(value))
 
 waffle_chart(x1, fill = "carb", facet = "gear_vs", value = "value", composition = FALSE, max_value = max(y$value))
 
+# ---------- #
+# Pour la BDD COLEO #
+# ---------- #
+waffle_chart(data = indic_count,
+             fill = "category",
+             value = "freq",
+             plot.title = "ESSAI DE TITRE",
+             base_size = 20,
+             fill_title = "Indicateurs", #character giving the title for the color legend
+             fill_colors = as.character(indic_count$cat_coul), #named character vector giving the colors for \code{fill} levels. See \code{\link[ggplot2]{scale_fill_manual}}
+             legend.position = "right"#character specifying the position of the legend. See \code{\link[ggplot2]{ggtheme}}
+             )
+
+
+#### TEST 3 - Représentation des catégories présentes sur un site par rapport au reste de la BDD ####
+
 # ----------- #
 # Exemple pour le site 135_104_F01 / 136_116_H01 #
 # ----------------- #
-source("waffle_functions.R")
 
-#site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
-site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
+#site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
 names(site_count)[1] <- "category"
 site_count <- dplyr::left_join(site_count, indic_count, by = "category")
 names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
-site_count$prop_siteVStot <- round(site_count$freq_site/site_count$freq_tot*site_count$prop_tot, digits = 1)
+#site_count$prop_siteVStot <- round(site_count$freq_site/site_count$freq_tot*site_count$prop_tot, digits = 1)
 
-
-waffle_chart(data = site_count, fill = "category", value = "freq_site", fill_colors = RColorBrewer::brewer.pal(n = length(site_count$category), name = 'Dark2'))
-
+# waffle plot unique pour le site
 waffle_chart(data = site_count, fill = "category", value = "freq_site", fill_colors = as.character(site_count$cat_coul))
 
+
 # ---------- #
+# Manipulation des données pour obtenir un plot par indicateur
+# --------- #
+site_count <- as.data.frame(rbind(as.matrix(site_count[, c(1, 2,5)]), as.matrix(site_count[, c(1, 3, 5)])))
+names(site_count)[2] <- "freq"
+site_count$data <- c(rep("site", length(unique(site_count$category))), rep("totale", length(unique(site_count$category))))
+site_count$freq <- as.numeric(as.character(site_count$freq))
+summary(site_count)
 
-newDF <- as.data.frame(rbind(as.matrix(site_count[, c(1, 2,5)]), as.matrix(site_count[, c(1, 3, 5)])))
-names(newDF)[2] <- "freq"
-newDF$data <- c(rep("site", length(unique(site_count$category))), rep("totale", length(unique(site_count$category))))
-newDF$freq <- as.numeric(as.character(newDF$freq))
-summary(newDF)
+# grille avec 1 waffle plot par indicateurs du site
+# *** WARNING *** - Problème de couleur
+waffle_chart(data = site_count,
+             fill = "data",
+             facet = "category",
+             value = "freq",
+             composition = FALSE,
+             max_value = sum(site_count$freq[site_count$data == "totale"]),
+             base_size = 20,
+             plot.title = paste("Proportion des indicateurs sur le site", "135_104_F01", sep = " "),
+             fill_title = "Indicateurs",
+             fill_colors =  c(as.character(unique(site_count$cat_coul))[1], "grey"))
 
-d <- newDF[newDF$category == "plantes",]
+# Tentative de réglage de beug avec la couleur
+d <- site_count[site_count$category == "plantes",]
 waffle_chart(data = d, fill = "data", value = "freq")
 
 
-waffle_chart(data = newDF, fill = "data", facet = "category", value = "freq", composition = TRUE, max_value = NULL, fill_colors = RColorBrewer::brewer.pal(n = length(site_count$category), name = 'Dark2'))
+waffle_chart(data = site_count, fill = "data", facet = "category", value = "freq", composition = TRUE, max_value = NULL, fill_colors = RColorBrewer::brewer.pal(n = length(site_count$category), name = 'Dark2'))
 
-x11()
+
 waffle_chart(data = newDF, fill = "data", facet = "category", value = "freq", composition = FALSE, max_value = sum(newDF$freq[newDF$data == "totale"]), fill_colors =  c(as.character(unique(site_count$cat_coul)), "grey"))
+
+# --------------- #
+# Plusieurs plot sur une même page
+# Multiplot function - http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_(ggplot2)/
+# --------------- #
 
 # x11()
 # par(mfrow = c(2,3))
-for (i in as.character(indic_count$category)){
-  d <- newDF[newDF$category == i,]
-  print(waffle_chart(data = d, fill = "data", facet = "category", value = "freq", composition = FALSE, max_value = sum(newDF$freq[newDF$data == "totale"]), fill_colors = c(as.character(coul$cat_coul[coul$category == i]), "grey")))
-  #print(waffle_chart(data = d, fill = "data", value = "freq", fill_colors = c(as.character(coul$cat_coul[coul$category == i]), "grey")))
+source("multiplot_functions.R")
+
+# Préparation de la liste avec tous les plots
+plot_list <- list()
+
+for (i in 1: length(unique(site_count$category))){
+  d <- site_count[site_count$category == unique(site_count$category)[i],]
+  plot_list[[i]] <- waffle_chart(data = d,
+                     fill = "data",
+                     facet = "category",
+                     value = "freq",
+                     composition = FALSE,
+                     max_value = sum(site_count$freq[site_count$data == "totale"]),
+                     base_size = 20,
+                     fill_colors = c(as.character(unique(d$cat_coul)), "grey"))
 }
 
+multiplot(plotlist = plot_list, cols = ceiling(length(plot_list)/2))
 
-#### TEST 2 ####
+#### TEST 4 - Interactive waffle chart  ####
 # ----------- #
 
 library(dplyr)
