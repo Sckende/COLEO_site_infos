@@ -1,4 +1,5 @@
 setwd("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
+rm(list = ls())
 library(shiny)
 library(tidyverse)
 library(rcoleo)
@@ -13,6 +14,7 @@ library(shinydashboard)
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
 source("waffle_functions.R")
+source("multiplot_functions.R")
 #source("Manipulations_rcoleo.R")
 
 # Define UI for application that draws a histogram
@@ -165,14 +167,10 @@ server <- function(input, output, session) {
     names(site_count)[1] <- "category"
     site_count <- dplyr::left_join(site_count, indic_count, by = "category")
     names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
-    site_count$prop_siteVStot <- round(site_count$freq_site/site_count$freq_tot*site_count$prop_tot, digits = 1)
-    
-    newDF <- as.data.frame(rbind(as.matrix(site_count[, c(1, 2,5)]), as.matrix(site_count[, c(1, 3, 5)])))
-    names(newDF)[2] <- "freq"
-    newDF$data <- c(rep("site", length(unique(site_count$category))), rep("totale", length(unique(site_count$category))))
-    newDF$freq <- as.numeric(as.character(newDF$freq))
-    
-    
+    site_count <- as.data.frame(rbind(as.matrix(site_count[, c(1, 2,5)]), as.matrix(site_count[, c(1, 3, 5)])))
+    names(site_count)[2] <- "freq"
+    site_count$data <- c(rep("site", length(unique(site_count$category))), rep("totale", length(unique(site_count$category))))
+    site_count$freq <- as.numeric(as.character(site_count$freq))
     
     output$waff <- renderPlot({
       if(is.null(event$id)){
@@ -180,7 +178,11 @@ server <- function(input, output, session) {
         waffle_chart(data = indic_count,
                      fill = "category",
                      value = "freq",
-                     fill_colors = as.character(site_count$cat_coul))
+                     base_size = 20,
+                     plot.title = "Proportion globale des indicateurs",
+                     fill_title = "Indicateurs",
+                     fill_colors = as.character(indic_count$cat_coul),
+                     legend.position = "right")
         
       } else {
         
@@ -191,7 +193,35 @@ server <- function(input, output, session) {
         #   theme_ipsum_rc(grid="") +
         #   theme_enhance_waffle()
         
-        waffle_chart(data = newDF, fill = "data", facet = "category", value = "freq", composition = FALSE, max_value = sum(newDF$freq[newDF$data == "totale"]), fill_colors =  c(as.character(unique(site_count$cat_coul))[1], "grey"))
+        # waffle_chart(data = site_count,
+        #              fill = "data",
+        #              facet = "category",
+        #              value = "freq",
+        #              composition = FALSE,
+        #              max_value = sum(site_count$freq[site_count$data == "totale"]),
+        #              base_size = 20,
+        #              plot.title = paste("Proportion des indicateurs sur le site", unique(obs_an()$site_id), sep = " "),
+        #              fill_title = "Indicateurs",
+        #              fill_colors =  c(as.character(unique(site_count$cat_coul))[1], "grey"))
+        
+        # Préparation de la liste avec tous les plots
+        plot_list <- list()
+        
+        for (i in 1: length(unique(site_count$category))){
+          d <- site_count[site_count$category == unique(site_count$category)[i],]
+          plot_list[[i]] <- waffle_chart(data = d,
+                                         fill = "data",
+                                         facet = "category",
+                                         value = "freq",
+                                         composition = FALSE,
+                                         max_value = sum(site_count$freq[site_count$data == "totale"]),
+                                         base_size = 20,
+                                         fill_colors = c(as.character(unique(d$cat_coul)), "grey"))
+        }
+        
+
+        
+        multiplot(plotlist = plot_list, cols =  ceiling(length(plot_list)/2))
         
       }
     })
