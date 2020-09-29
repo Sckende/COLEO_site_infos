@@ -185,7 +185,7 @@ server <- function(input, output, session) {
                      legend.position = "right")
         
       } else {
-        if (length(unique(site_count$category == 1))){
+        if (length(unique(site_count$category)) == 1){
           waffle_chart(data = site_count,
                        fill = "data",
                        value = "freq",
