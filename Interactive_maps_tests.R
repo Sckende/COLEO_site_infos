@@ -91,7 +91,7 @@ waffle_chart(data = indic_count,
 # Exemple pour le site 135_104_F01 / 136_116_H01 #
 # ----------------- #
 
-site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
 #site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
 names(site_count)[1] <- "category"
 site_count <- dplyr::left_join(site_count, indic_count, by = "category")
