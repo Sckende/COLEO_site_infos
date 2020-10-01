@@ -5,6 +5,9 @@ library(rcoleo)
 library(plyr)
 library(dplyr)
 library(purrr)
+library(jsonlite)
+library(geojsonio)
+library(sf)
 
 source("functions.R")
 
@@ -54,51 +57,6 @@ all_sites <- all_sites %>%
                              "<br/>",
                              "<b> annee_creation</b> ",
                              open_year))
-# ------------------------------ #
-#### Fake environmental data ####
-# ---------------------------- #
-# For each cell
-# unique(all_sites$cell_id) = 28, donc création de 28 conditions environnementales différentes
-
-### Fake temperatures - aspect sinusoidal
-# variables
-n <- 100 # number of data points
-t <- seq(from = 0, to = 4*pi, length.out = 100)
-a <- 3
-b <- 0.5
-
-FakeTemp <- NULL
-for(i in 1:28){
-  c.unif <- runif(n)
-  amp <- round(runif(1, 1, 10))
-  col <- i + 1
-  y2 <- a*sin(b*t)+c.unif*amp # uniform error
-  
-  cell_id <- unique(all_sites$cell_id)[i]
-  
-  j <- data.frame(cell_id, Temp = y2)
-  
-  FakeTemp <- rbind(FakeTemp, j)
-
-}
-
-### Fake precipitations
-
-FakePrec <- NULL
-for(i in 1:28){
-  
-  p <- runif(12, 0, 120)
-  cell_id <- unique(all_sites$cell_id)[i]
-  
-  k <- data.frame(cell_id, Prec = p)
-  
-  FakePrec <- rbind(FakePrec, k)
-  
-}
-
-for(i in unique(FakePrec$cell_id)){
-  barplot(FakePrec$Prec[FakePrec$cell_id == i])
-}
 
 # ------------------------------- #
 #### Observations des especes ####
@@ -175,6 +133,105 @@ names(indic_count)[1] <- "category"
 indic_count <- na.omit(indic_count)
 indic_count <- dplyr::left_join(indic_count, coul, by = "category")
 
+# ------------------------------------------------ #
+#### Formatage des coord. des cellules --> geoJson pour extraction des données météo ####
+# Via earthmap.org - https://earthmap.org/
+# ---------------------------------------------- #
+
+  # Obtention de toutes les cellules
+cells <- rcoleo::get_gen("/cells")
+cells <- do.call("rbind.fill", cells$body)
+str(cells)
+names(cells)
+  # Conversion des polygones en spatial feature
+geom <- rcoleo::cl_to_sf(cells[,c(1, 7, 8)])
+names(geom)[1] <- "name"
+  # Conversion en format JSON
+coordGEOJSON <- geojson_json(geom)
+#geojson_write(coordGEOJSON, file = "cellsCOORD.geojson")# Writing geojson file in the current directory
+
+  # Obtention des cellules uniquement présentes dans le prototype de la shiny app
+#cells : 134 198 151 165 119 149 160 157 169 186 141 446 495
+uniq_cells <- unique(all_obs$cell_id)
+coord_app_geojson <- geom[geom$name %in% uniq_cells,]
+
+coord_app_geojson <- geojson_json(coord_app_geojson)
+#geojson_write(coord_app_geojson, file = "ShinycellsCOORD.geojson") # Writing geojson file in the current directory
+
+# ------------------------------ #
+#### Environmental data uniquement pour les cellules dans le prototype du TdeB ####
+# ---------------------------- #
+
+meteoCELLS <- list.files(path = "/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_meteo_cells/", full.names = TRUE)
+nchar("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_meteo_cells//") # For counting the nimber of characters in the path = 96
+lapply(funRcoleo, source)
+
+meteoCELLSdf <- data.frame()
+for(i in 1:length(meteoCELLS)){
+  cell_id <- substr(meteoCELLS[[i]], start = 97, stop = 99)
+  indic_meteo <- substr(meteoCELLS[[i]], start = 101, stop = 104)
+  tab <- readr::read_csv(meteoCELLS[[i]], col_names = FALSE, skip = 2)
+  tab$cell_id <- cell_id
+  tab$indic_meteo <- indic_meteo
+  
+  meteoCELLSdf <- rbind(meteoCELLSdf, tab)
+}
+
+names(meteoCELLSdf)[c(1, 2)] <- c("Month", "Value")
+meteoCELLSdf$indic_meteo[meteoCELLSdf$indic_meteo == "Mean"] <- "Temp"
+
+meteoCELLSdf$Month <- as.factor(meteoCELLSdf$Month)
+meteoCELLSdf$cell_id <- as.numeric(meteoCELLSdf$cell_id)
+meteoCELLSdf$indic_meteo <- as.factor(meteoCELLSdf$indic_meteo)
+
+summary(meteoCELLSdf)
 # ---------------- #
 ###   BROUILLON ###
 # -------------- #
+
+# ------------------------------ #
+#### Fake environmental data ####
+# ---------------------------- #
+# For each cell
+# unique(all_sites$cell_id) = 28, donc création de 28 conditions environnementales différentes
+
+### Fake temperatures - aspect sinusoidal
+# variables
+# n <- 100 # number of data points
+# t <- seq(from = 0, to = 4*pi, length.out = 100)
+# a <- 3
+# b <- 0.5
+# 
+# FakeTemp <- NULL
+# for(i in 1:28){
+#   c.unif <- runif(n)
+#   amp <- round(runif(1, 1, 10))
+#   col <- i + 1
+#   y2 <- a*sin(b*t)+c.unif*amp # uniform error
+#   
+#   cell_id <- unique(all_sites$cell_id)[i]
+#   
+#   j <- data.frame(cell_id, Temp = y2)
+#   
+#   FakeTemp <- rbind(FakeTemp, j)
+#   
+# }
+# 
+# ### Fake precipitations
+# 
+# FakePrec <- NULL
+# for(i in 1:28){
+#   
+#   p <- runif(12, 0, 120)
+#   cell_id <- unique(all_sites$cell_id)[i]
+#   
+#   k <- data.frame(cell_id, Prec = p)
+#   
+#   FakePrec <- rbind(FakePrec, k)
+#   
+# }
+# 
+# for(i in unique(FakePrec$cell_id)){
+#   barplot(FakePrec$Prec[FakePrec$cell_id == i])
+# }
+# 
