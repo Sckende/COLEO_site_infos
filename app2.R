@@ -39,8 +39,8 @@ ui <- fluidPage(#theme = shinytheme("slate"),
                 unique(sort(all_obs$obs_year))),
     uiOutput("echan"),
     h3("Conditions abiotiques du site sélectionné"),
-    plotOutput("FakeTemp", height = 230),
-    plotOutput("FakePrec", height = 250))),
+    plotlyOutput("Temp", height = 230),
+    plotOutput("Prec", height = 250))),
   fluidRow(
       column(6,
              "",
@@ -114,23 +114,47 @@ server <- function(input, output, session) {
     
     # Obtention de la description du site et des conditions météorologiques
 
-    output$FakeTemp <- renderPlot({
+    output$Temp <- renderPlotly({
 
        if (is.null(event))
          return(NULL)
 
       par(bg = "transparent")
       cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
+      temp <- meteoCELLSdf[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Temp",]
+      temp$Month <- factor(temp$Month, temp$Month)
       
-      plot(FakeTemp$Temp[FakeTemp$cell_id == cell],
-           type = "l",
-           bty = "n",
-           xlim = c(1,108),
-           xlab = "Time",
-           ylab = "Températures")
+      fig <- plot_ly()
+      fig <- fig %>% add_trace(
+        x = temp$Month,
+        y = temp$Value,
+        type = 'scatter',
+        fill = 'tozeroy',
+        #opacity = 0.2,
+        #fillcolor = 'orange' ,
+        color = "darkorange",
+        hoveron = 'points',
+        marker = list(
+          color = 'darkorange'
+        ),
+        line = list(
+          color = 'darkorange'
+        ),
+        text = "Points",
+        hoverinfo = 'x+y'
+      )
+      fig
+      
+      # plot(meteoCELLSdf$Value[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Temp"],
+      #      type = "l",
+      #      bty = "n",
+      #      ylim = c(-30, 40),
+      #      #xlim = c(1,12),
+      #      xlab = "Mois",
+      #      ylab = "Températures moyennes entre 1979 et 2019")
     })
     
-    output$FakePrec <- renderPlot({
+    output$Prec <- renderPlot({
       
       
       if (is.null(event))
@@ -140,9 +164,9 @@ server <- function(input, output, session) {
 
       cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
 
-      barplot(FakePrec$Prec[FakePrec$cell_id == cell],
-              xlab = "Time",
-              ylab = "Précipitations cumulées")
+      barplot(meteoCELLSdf$Value[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Prec"],
+              xlab = "Mois",
+              ylab = "Précipitations cumulées entre 1979 et 2019")
     })
     
     # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
