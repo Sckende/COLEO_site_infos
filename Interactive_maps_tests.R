@@ -215,3 +215,51 @@ plot(g$conc, type = "h")
 par(new = TRUE)
 plot(g$uptake, type = "l")
 
+
+#### --------- Interactive pop-up om plot - ggplot + plotly ----------------- ####
+library(plotly)
+datn <- meteoCELLSdf[meteoCELLSdf$cell_id == 446 & meteoCELLSdf$indic_meteo == "Temp",]
+
+datn$Month <- factor(datn$Month, levels = datn$Month) # Avoiding ggplot sorts factor levels
+p <- ggplot(data=datn, aes(x=Month, y=Value)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "grey") +
+  geom_area()
+  #geom_ribbon(aes(x=Month, ymax=Value, ymin=0), fill="pink", alpha=.5)
+  #geom_density(alpha = 0.2, colour = "green")
+
+fig <- ggplotly(p)
+
+fig
+
+
+fig <- plot_ly(x = ~datn$Month, y = ~datn$Value, type = 'scatter', mode = 'lines', fill = 'tozeroy')
+fig <- fig %>% layout(xaxis = list(title = 'Mois'),
+                      yaxis = list(title = 'Température moyenne'))
+
+fig
+
+
+
+fig <- plot_ly()
+fig <- fig %>% add_trace(
+  x = datn$Month,
+  y = datn$Value,
+  type = 'scatter',
+  fill = 'tozeroy',
+  #opacity = 0.2,
+  #fillcolor = 'orange' ,
+  color = "darkorange",
+  hoveron = 'points',
+  marker = list(
+    color = 'darkorange'
+  ),
+  line = list(
+    color = 'darkorange'
+  ),
+  text = "Points",
+  hoverinfo = 'x+y'
+)
+#fig <- fig %>% layout(xaxis = list(zeroline = FALSE))
+fig
