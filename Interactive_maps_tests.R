@@ -1,4 +1,4 @@
-setwd("C:/Users/HP_9470m/Desktop/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
+setwd("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
 
 # Interactive map
 
@@ -10,6 +10,8 @@ library(rcoleo)
 #library(ggiraph)
 library(leaflet)
 library(dplyr)
+library(plotly)
+library(ggplot2)
 
 source("functions.R")
 source("Manipulations_rcoleo.R")
@@ -218,9 +220,14 @@ plot(g$uptake, type = "l")
 
 #### --------- Interactive pop-up om plot - ggplot + plotly ----------------- ####
 library(plotly)
+
+# For temperatures
+
 datn <- meteoCELLSdf[meteoCELLSdf$cell_id == 446 & meteoCELLSdf$indic_meteo == "Temp",]
 
 datn$Month <- factor(datn$Month, levels = datn$Month) # Avoiding ggplot sorts factor levels
+
+#---#
 p <- ggplot(data=datn, aes(x=Month, y=Value)) +
   geom_line() +
   geom_point() +
@@ -233,33 +240,59 @@ fig <- ggplotly(p)
 
 fig
 
-
+#---#
 fig <- plot_ly(x = ~datn$Month, y = ~datn$Value, type = 'scatter', mode = 'lines', fill = 'tozeroy')
 fig <- fig %>% layout(xaxis = list(title = 'Mois'),
                       yaxis = list(title = 'Température moyenne'))
 
 fig
 
+#---#
 
+fig1 <- plot_ly(x = datn$Month,
+                y = datn$Value,
+                type = "scatter",
+                mode = "lines+markers",
+                marker = list(symbol = "circle",
+                    color = 'darkorange'),
+                line = list(color = "darkorange"),
+                fill = "tozeroy",
+                fillcolor = "rgba(255,126,0,0.4)" )
+# fig1 <- fig1 %>% add_trace(
+#   x = datn$Month,
+#   y = datn$Value,
+#   type = 'scatter',
+#   fill = 'tozeroy',
+#   color = "darkorange",
+#   hoveron = 'points',
+#   marker = list(
+#     color = 'darkorange'
+#   ),
+#   line = list(
+#     color = 'darkorange'
+#   ),
+#   text = "Points",
+#   hoverinfo = 'x+y'
+# ) %>% 
+fig1 <- fig1 %>% layout(yaxis = list(title = "Températures moyennes (1989 - 2019)")) %>% 
+                        layout(plot_bgcolor = "rgba(254, 247, 234, 0)") %>% 
+                        layout(paper_bgcolor = "rgba(254, 247, 234, 0)")
+fig1
 
-fig <- plot_ly()
-fig <- fig %>% add_trace(
-  x = datn$Month,
-  y = datn$Value,
-  type = 'scatter',
-  fill = 'tozeroy',
-  #opacity = 0.2,
-  #fillcolor = 'orange' ,
-  color = "darkorange",
-  hoveron = 'points',
-  marker = list(
-    color = 'darkorange'
-  ),
-  line = list(
-    color = 'darkorange'
-  ),
-  text = "Points",
-  hoverinfo = 'x+y'
-)
-#fig <- fig %>% layout(xaxis = list(zeroline = FALSE))
-fig
+# For precipitations
+datp <- meteoCELLSdf[meteoCELLSdf$cell_id == 446 & meteoCELLSdf$indic_meteo == "Prec",]
+datp$Month <- factor(datp$Month, datp$Month)
+
+fig2 <- plot_ly(
+  x = datp$Month,
+  y = datp$Value,
+  yaxis = list(title = "Precip"),
+  name = "Précipitations",
+  type = "bar",
+  opacity = 0.5,
+  orientation = "v",
+  marker = list(color = "green")
+)# %>% layout(yaxis = list(title = "Précipitations cumulées (1989 - 2019)"))
+fig2
+FIG <- subplot(fig1, fig2, nrows = 2)
+FIG
