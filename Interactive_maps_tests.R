@@ -93,8 +93,8 @@ waffle_chart(data = indic_count,
 # Exemple pour le site 135_104_F01 / 136_116_H01 #
 # ----------------- #
 
-site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
 #site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
 names(site_count)[1] <- "category"
 site_count <- dplyr::left_join(site_count, indic_count, by = "category")
 names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
@@ -161,6 +161,62 @@ for (i in 1: length(unique(site_count$category))){
 }
 
 multiplot(plotlist = plot_list, cols = ceiling(length(plot_list)/2))
+
+# --------------- #
+# Utilisation de PLOTLY
+# --------------- #
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
+names(site_count)[1] <- "category"
+site_count <- dplyr::left_join(site_count, indic_count, by = "category")
+names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
+site_count
+
+fTOT <- plot_ly(data = site_count,
+                x = ~freq_tot,
+                y = ~category,
+                type = "bar",
+                orientation = "h",
+                color = ~category,
+                colors = "Dark2") 
+fTOT
+
+fSITE <- plot_ly(data = site_count,
+                 x = freq_site,
+                 y = category,
+                 type = "bar",
+                 orientation = "h",
+                 color = ~category
+                 #colors = "Dark2"
+                 )
+fSITE
+
+FIG <- subplot(fTOT, fSITE, shareX = T, shareY = T)
+FIG
+
+#---#
+
+figure <- plot_ly(data = site_count,
+                x = ~freq_tot,
+                y = ~category,
+                type = "bar",
+                orientation = "h",
+                color = ~category,
+                colors = "Dark2",
+                opacity = 0.5,
+                name = "Total") %>% 
+  add_trace(x = ~freq_site,
+            y = ~category,         
+            type = "bar",
+            orientation = "h",
+            color = ~category,
+            colors = "Dark2",
+            opacity = 1,
+            name = "Site") %>% 
+  layout(barmode = "overlay",
+         xaxis = list(title = "Occurence"),
+         yaxis = list(title = ""),
+         showlegend = F)
+figure
 
 #### TEST 4 - Interactive waffle chart  ####
 # ----------- #
