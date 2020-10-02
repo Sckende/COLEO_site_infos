@@ -10,6 +10,7 @@ library(shinythemes)
 library(hrbrthemes)
 library(waffle)
 library(shinydashboard)
+library(plotly)
 
 
 if(!exists("all_obs")){source("Manipulations_rcoleo.R")}
@@ -39,13 +40,16 @@ ui <- fluidPage(#theme = shinytheme("slate"),
                 unique(sort(all_obs$obs_year))),
     uiOutput("echan"),
     h3("Conditions abiotiques du site sélectionné"),
-    plotlyOutput("Temp", height = 230),
-    plotOutput("Prec", height = 250))),
+    # plotlyOutput("Temp", height = 230),
+    # plotOutput("Prec", height = 250)
+    #plotlyOutput("Prec", height = 250)
+    plotlyOutput("TempPrec")
+    )
+  ),
   fluidRow(
       column(6,
              "",
              plotOutput("waff")),
-      #textOutput("waff")),
 
       column(6,
              dataTableOutput("donnees"))
@@ -114,7 +118,7 @@ server <- function(input, output, session) {
     
     # Obtention de la description du site et des conditions météorologiques
 
-    output$Temp <- renderPlotly({
+    output$TempPrec <- renderPlotly({
 
        if (is.null(event))
          return(NULL)
@@ -124,14 +128,15 @@ server <- function(input, output, session) {
       temp <- meteoCELLSdf[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Temp",]
       temp$Month <- factor(temp$Month, temp$Month)
       
-      fig <- plot_ly()
-      fig <- fig %>% add_trace(
+      prec <- meteoCELLSdf[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Prec",]
+      prec$Month <- factor(prec$Month, prec$Month)
+      
+      fig1 <- plot_ly(name = "Températures")
+      fig1 <- fig1 %>% add_trace(
         x = temp$Month,
         y = temp$Value,
         type = 'scatter',
         fill = 'tozeroy',
-        #opacity = 0.2,
-        #fillcolor = 'orange' ,
         color = "darkorange",
         hoveron = 'points',
         marker = list(
@@ -142,8 +147,9 @@ server <- function(input, output, session) {
         ),
         text = "Points",
         hoverinfo = 'x+y'
-      )
-      fig
+      ) 
+      fig1 <- fig1 %>% layout(yaxis = list(title = "Températures moyennes (1979 - 2019)"))
+      #fig
       
       # plot(meteoCELLSdf$Value[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Temp"],
       #      type = "l",
@@ -152,21 +158,42 @@ server <- function(input, output, session) {
       #      #xlim = c(1,12),
       #      xlab = "Mois",
       #      ylab = "Températures moyennes entre 1979 et 2019")
-    })
-    
-    output$Prec <- renderPlot({
+    # })
+    # 
+    # output$Prec <- renderPlot({
+    #   
+    #   
+    #   if (is.null(event))
+    #     return(NULL)
+    #   
+    #   par(bg = "transparent")
+    # 
+    #   cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
+    # 
+    #   barplot(meteoCELLSdf$Value[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Prec"],
+    #           xlab = "Mois",
+    #           ylab = "Précipitations cumulées entre 1979 et 2019")
       
+      fig2 <- plot_ly(
+        x = prec$Month,
+        y = prec$Value,
+        name = "Précipitations",
+        type = "bar",
+        marker = list(color = "rgb(59,122,128")
+      ) 
+      fig2 <- fig2 %>% layout(yaxis = list(title = "Précipitations cumulées (1979 - 2019)"))
       
-      if (is.null(event))
-        return(NULL)
-      
-      par(bg = "transparent")
-
-      cell <- unique(obs_an()$cell_id[obs_an()$site_code == event$id])
-
-      barplot(meteoCELLSdf$Value[meteoCELLSdf$cell_id == cell & meteoCELLSdf$indic_meteo == "Prec"],
-              xlab = "Mois",
-              ylab = "Précipitations cumulées entre 1979 et 2019")
+      FIG <- subplot(fig1,
+                     fig2,
+                     nrows = 2,
+                     shareX = TRUE)
+      FIG <- FIG %>% layout(#title = paste0("Profil de températures et de précipitations au site", unique(obs_an()$site_code)),
+        #title = "Profil de températures & précipitations",
+                            showlegend = TRUE,
+                            legend = list(orientation = "h")) %>% 
+        layout(plot_bgcolor = "rgba(254, 247, 234, 0)") %>% 
+        layout(paper_bgcolor = "rgba(254, 247, 234, 0)")
+      FIG
     })
     
     # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
