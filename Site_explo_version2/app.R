@@ -168,7 +168,8 @@ server <- function(input, output, session) {
                 showlegend = TRUE,
                 legend = list(orientation = "h")) %>% 
                 layout(plot_bgcolor = "rgba(254, 247, 234, 0)") %>% 
-                layout(paper_bgcolor = "rgba(254, 247, 234, 0)")
+                layout(paper_bgcolor = "rgba(254, 247, 234, 0)") %>% 
+                config(displayModeBar = FALSE)
             FIG
         })
         
@@ -176,16 +177,17 @@ server <- function(input, output, session) {
         #----------------------------------------------------------------------
         
         mess <- obs_an()[obs_an()$site_code == event$id, "name"]
-        #message <- message %>% arrange(obs_species.taxa_name)
-        
-        # message <- obs_an()[obs_an()$site_code == event$id, "obs_species.taxa_name"]
         message <- data.frame(species = sort(unique(mess)))
         
-        
-        # output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
-        #                                   options = list(pageLength = 10))
-        output$donnees <- renderDataTable(message,
-                                          options = list(pageLength = 10))
+        if(is.null(event$id)){
+            output$donnees <- renderDataTable(data.frame(espèce = sort(unique(all_obs$name))),
+                                              options = list(pageLength = 10))
+        } else {
+            output$donnees <- renderDataTable(message,
+                                              options = list(pageLength = 10))
+        }
+
+
         
         # Obtention du bar plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
         # ------------------------------------------------------------------------
@@ -194,47 +196,59 @@ server <- function(input, output, session) {
         names(site_count)[1] <- "category"
         site_count <- dplyr::left_join(site_count, indic_count, by = "category")
         names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
+        
+        if(length(site_count$category) != length(indic_count$category)){
+            for (i in setdiff(indic_count$category, site_count$category)){
+                newline <- c(i, 0, indic_count$freq[indic_count$category == i], indic_count$prop[indic_count$category == i])
+                site_count <- rbind(site_count, newline)
+            }
+        }
+        
+
 
         output$waff <- renderPlotly({
             if(is.null(event$id)){
                 
-                figure <- plot_ly(data = site_count,
-                                  x = ~freq_tot,
+                figure <- plot_ly(data = indic_count,
+                                  x = ~freq,
                                   y = ~category,
                                   type = "bar",
                                   orientation = "h",
                                   color = ~category,
                                   colors = "Dark2",
                                   opacity = 1,
-                                  name = "Total") %>% 
+                                  name = "Total") %>%
                     layout(xaxis = list(title = "Occurence"),
                            yaxis = list(title = ""),
-                           showlegend = F)
+                           showlegend = F) %>% 
+                    config(displayModeBar = FALSE)
                 figure
 
             } else {
 
-                figure <- plot_ly(data = site_count,
-                                  x = ~freq_tot,
-                                  y = ~category,
+                figure <- plot_ly(
+                    #data = site_count,
+                                  x = as.numeric(site_count$freq_tot),
+                                  y = site_count$category,
                                   type = "bar",
                                   orientation = "h",
-                                  color = ~category,
+                                  color = site_count$category,
                                   colors = "Dark2",
-                                  opacity = 0.5,
+                                  opacity = 0.1,
                                   name = "Total") %>%
-                    add_trace(x = ~freq_site,
-                              y = ~category,
+                    add_trace(x = as.numeric(site_count$freq_site),
+                              y = site_count$category,
                               type = "bar",
                               orientation = "h",
-                              color = ~category,
+                              color = site_count$category,
                               colors = "Dark2",
                               opacity = 1,
                               name = "Site") %>%
                     layout(barmode = "overlay",
                            xaxis = list(title = "Occurence"),
                            yaxis = list(title = ""),
-                           showlegend = F)
+                           showlegend = F) %>% 
+                    config(displayModeBar = FALSE)
                 figure
             }
         })
