@@ -94,7 +94,8 @@ waffle_chart(data = indic_count,
 # ----------------- #
 
 #site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
-site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "141_108_H01"]))
+#site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
 names(site_count)[1] <- "category"
 site_count <- dplyr::left_join(site_count, indic_count, by = "category")
 names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
@@ -274,7 +275,7 @@ par(new = TRUE)
 plot(g$uptake, type = "l")
 
 
-#### --------- Interactive pop-up om plot - ggplot + plotly ----------------- ####
+#### --------- Interactive pop-up on plot/Meteo data - ggplot + plotly ----------------- ####
 library(plotly)
 
 # For temperatures
@@ -352,3 +353,246 @@ fig2 <- plot_ly(
 fig2
 FIG <- subplot(fig1, fig2, nrows = 2)
 FIG
+
+
+#### --------- Interactive graphs with Ouranos data - plotly ----------------- ####
+
+PrecEstrie <- read.csv("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_ouranos/Estrie-TotAnnPrec.csv")
+TempEstrie <- read.csv("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_ouranos/Estrie-MoyAnnTemp.csv")
+
+#---#
+summary(PrecEstrie)
+PrecEstrie$Hist.Min[PrecEstrie$Annee == 2007] <- min(PrecEstrie$rcp45.Min[PrecEstrie$Annee == 2007], PrecEstrie$rcp85.Min[PrecEstrie$Annee == 2007])
+PrecEstrie$Hist.Max[PrecEstrie$Annee == 2007] <- min(PrecEstrie$rcp45.Max[PrecEstrie$Annee == 2007], PrecEstrie$rcp85.Max[PrecEstrie$Annee == 2007])
+
+#---#
+summary(TempEstrie)
+TempEstrie$Hist.Min[TempEstrie$Annee == 2007] <- min(TempEstrie$rcp45.Min[TempEstrie$Annee == 2007], TempEstrie$rcp85.Min[TempEstrie$Annee == 2007])
+TempEstrie$Hist.Max[TempEstrie$Annee == 2007] <- min(TempEstrie$rcp45.Max[TempEstrie$Annee == 2007], TempEstrie$rcp85.Max[TempEstrie$Annee == 2007])
+
+#---#
+fig <- plot_ly(x = PrecEstrie$Annee,
+               y = PrecEstrie$Obs,
+               type = "scatter",
+               mode = "lines",
+               line = list(color = 'rgba(0,100,80,1)'),
+               name = "hist_prec",
+               showlegend = TRUE)
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                  y = PrecEstrie$Hist.Min,
+                  type = "scatter",
+                  mode = "lines",
+                  line = list(color = 'transparent'),
+                  name = "hist_prec_min",
+                  showlegend = FALSE)
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$Hist.Max,
+                         type = "scatter",
+                         mode = "lines",
+                         fill = "tonexty",
+                         fillcolor='rgba(0,100,80,0.2)',
+                         line = list(color = 'transparent'),
+                         name = "hist_prec_max",
+                         showlegend = FALSE)
+#---#
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$rcp45.Avg,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'rgba(153,102,0,1)'),
+                         name = "emission_moderees",
+                         showlegend = TRUE)
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$rcp45.Min,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'transparent'),
+                         name = "em_mod_min",
+                         showlegend = FALSE)
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$rcp45.Max,
+                         type = "scatter",
+                         mode = "lines",
+                         fill = "tonexty",
+                         fillcolor='rgba(153,102,0,0.2)',
+                         line = list(color = 'transparent'),
+                         name = "em_mod_max",
+                         showlegend = FALSE)
+#---#
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$rcp85.Avg,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = "rgba(255,51,51,1)"),
+                         name = "emission_fortes",
+                         showlegend = TRUE)
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$rcp85.Min,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'transparent'),
+                         name = "em_forte_min",
+                         showlegend = FALSE)
+fig <- fig %>% add_trace(x = PrecEstrie$Annee,
+                         y = PrecEstrie$rcp85.Max,
+                         type = "scatter",
+                         mode = "lines",
+                         fill = "tonexty",
+                         fillcolor='rgba(255,51,51,0.2)',
+                         line = list(color = 'transparent'),
+                         name = "em_forte_max",
+                         showlegend = FALSE)
+#---#
+fig
+
+#---#
+figTemp <- plot_ly(x = TempEstrie$Annee,
+               y = TempEstrie$Obs,
+               type = "scatter",
+               mode = "lines",
+               line = list(color = 'rgba(230,191,0,1)'),
+               name = "hist_prec",
+               showlegend = TRUE)
+figTemp <- figTemp %>% add_ribbons(x = TempEstrie$Annee,
+                                   ymin = TempEstrie$Hist.Min,
+                                   ymax = TempEstrie$Hist.Max,
+                                   line = list(color = 'transparent'),
+                                   fillcolor='rgba(230,191,0,0.2)')
+# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+#                          y = TempEstrie$Hist.Min,
+#                          type = "scatter",
+#                          mode = "lines",
+#                          line = list(color = 'transparent'),
+#                          name = "hist_prec_min",
+#                          showlegend = FALSE)
+# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+#                          y = TempEstrie$Hist.Max,
+#                          type = "scatter",
+#                          mode = "lines",
+#                          fill = "tonexty",
+#                          fillcolor='rgba(230,191,0,0.2)',
+#                          line = list(color = 'transparent'),
+#                          name = "hist_prec_max",
+#                          showlegend = FALSE)
+#---#
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$rcp45.Avg,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'rgba(153,102,0,1)'),
+                         name = "emission_moderees",
+                         showlegend = TRUE)
+figTemp <- figTemp %>% add_ribbons(x = TempEstrie$Annee,
+                                   ymin = TempEstrie$rcp45.Min,
+                                   ymax = TempEstrie$rcp45.Max,
+                                   line = list(color = "transparent"),
+                                   fillcolor = 'rgba(153,102,0,0.2)')
+# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+#                          y = TempEstrie$rcp45.Min,
+#                          type = "scatter",
+#                          mode = "lines",
+#                          line = list(color = 'transparent'),
+#                          name = "em_mod_min",
+#                          showlegend = FALSE)
+# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+#                          y = TempEstrie$rcp45.Max,
+#                          type = "scatter",
+#                          mode = "lines",
+#                          fill = "tonexty",
+#                          fillcolor='rgba(153,102,0,0.2)',
+#                          line = list(color = 'transparent'),
+#                          name = "em_mod_max",
+#                          showlegend = TRUE)
+#---#
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$rcp85.Avg,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = "rgba(255,51,51,1)"),
+                         name = "emission_fortes",
+                         showlegend = TRUE)
+figTemp <- figTemp %>%  add_ribbons(x = TempEstrie$Annee,
+                                    ymin = TempEstrie$rcp85.Min,
+                                    ymax = TempEstrie$rcp85.Max,
+                                    line = list(color = "transparent"),
+                                    fillcolor = "rgba(255,51,51,0.2)")
+# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+#                          y = TempEstrie$rcp85.Min,
+#                          type = "scatter",
+#                          mode = "lines",
+#                          line = list(color = 'transparent'),
+#                          name = "em_forte_min",
+#                          showlegend = FALSE)
+# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+#                          y = TempEstrie$rcp85.Max,
+#                          type = "scatter",
+#                          mode = "lines",
+#                          fill = "tonexty",
+#                          fillcolor='rgba(255,51,51,0.2)',
+#                          line = list(color = 'transparent'),
+#                          name = "em_forte_max",
+#                          showlegend = FALSE)
+#---#
+figTemp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Brouillon ####
+
+#site_count <- count(as.character(all_obs$category[all_obs$site_code == "136_116_H01"]))
+site_count <- count(as.character(all_obs$category[all_obs$site_code == "141_108_H01"]))
+#site_count <- count(as.character(all_obs$category[all_obs$site_code == "135_104_F01"]))
+names(site_count)[1] <- "category"
+site_count <- dplyr::left_join(site_count, indic_count, by = "category")
+names(site_count)[1:4] <- c("category", "freq_site", "freq_tot", "prop_tot")
+
+
+
+
+
+
+if(length(site_count$category) != length(indic_count$category)){
+  for (i in setdiff(indic_count$category, site_count$category)){
+    newline <- c(i, 0, indic_count$freq[indic_count$category == i], indic_count$prop[indic_count$category == i])
+    site_count <- rbind(site_count, newline)
+  }
+  site_count$freq_site <- as.numeric(site_count$freq_site)
+  site_count$freq_tot <- as.numeric(site_count$freq_tot)
+}
+
+figure <- plot_ly(data = site_count,
+                  x = ~freq_tot,
+                  y = ~category,
+                  type = "bar",
+                  orientation = "h",
+                  color = ~category,
+                  colors = "Dark2",
+                  opacity = 0.5,
+                  name = "Total") %>%
+  add_trace(x = ~freq_site,
+            y = ~category,
+            type = "bar",
+            orientation = "h",
+            color = ~category,
+            colors = "Dark2",
+            opacity = 1,
+            name = "Site") %>%
+  layout(barmode = "overlay",
+         xaxis = list(title = "Occurence"),
+         yaxis = list(title = ""),
+         showlegend = F)
+figure
