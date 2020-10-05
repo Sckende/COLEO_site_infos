@@ -198,18 +198,16 @@ server <- function(input, output, session) {
     
     # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
     #----------------------------------------------------------------------
-    
     mess <- obs_an()[obs_an()$site_code == event$id, "name"]
-    #message <- message %>% arrange(obs_species.taxa_name)
-    
-    # message <- obs_an()[obs_an()$site_code == event$id, "obs_species.taxa_name"]
     message <- data.frame(species = sort(unique(mess)))
     
-    
-    # output$donnees <- renderDataTable(message[!duplicated(message$obs_species.taxa_name),],
-    #                                   options = list(pageLength = 10))
-    output$donnees <- renderDataTable(message,
-                                      options = list(pageLength = 10))
+    if(is.null(event$id)){
+      output$donnees <- renderDataTable(data.frame(espèce = sort(unique(all_obs$name))),
+                                        options = list(pageLength = 10))
+    } else {
+      output$donnees <- renderDataTable(message,
+                                        options = list(pageLength = 10))
+    }
     
     # Obtention du waffle plot pour la répartition du type d'espèces observées TOUTES CAMPAGNES CONFONDUES
     # ------------------------------------------------------------------------
