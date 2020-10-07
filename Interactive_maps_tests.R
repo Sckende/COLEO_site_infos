@@ -305,7 +305,8 @@ fig <- fig %>% layout(xaxis = list(title = 'Mois'),
 fig
 
 #---#
-
+# Plotly #
+# --- #
 fig1 <- plot_ly(x = datn$Month,
                 y = datn$Value,
                 type = "scatter",
@@ -314,7 +315,8 @@ fig1 <- plot_ly(x = datn$Month,
                     color = 'darkorange'),
                 line = list(color = "darkorange"),
                 fill = "tozeroy",
-                fillcolor = "rgba(255,126,0,0.4)" )
+                fillcolor = "rgba(255,126,0,0.4)",
+                name = "Températures")
 # fig1 <- fig1 %>% add_trace(
 #   x = datn$Month,
 #   y = datn$Value,
@@ -331,7 +333,7 @@ fig1 <- plot_ly(x = datn$Month,
 #   text = "Points",
 #   hoverinfo = 'x+y'
 # ) %>% 
-fig1 <- fig1 %>% layout(yaxis = list(title = "Températures moyennes (1989 - 2019)")) %>% 
+fig1 <- fig1 %>% layout(yaxis = list(title = "Températures moyennes (1979 - 2020)")) %>% 
                         layout(plot_bgcolor = "rgba(254, 247, 234, 0)") %>% 
                         layout(paper_bgcolor = "rgba(254, 247, 234, 0)")
 fig1
@@ -343,22 +345,59 @@ datp$Month <- factor(datp$Month, datp$Month)
 fig2 <- plot_ly(
   x = datp$Month,
   y = datp$Value,
-  yaxis = list(title = "Precip"),
+  #yaxis = list(title = "Precip"),
   name = "Précipitations",
   type = "bar",
   opacity = 0.5,
   orientation = "v",
-  marker = list(color = "green")
-)# %>% layout(yaxis = list(title = "Précipitations cumulées (1989 - 2019)"))
+  marker = list(color = "green")) 
+fig2 <- fig2 %>% layout(yaxis = list(title = "Précipitations cumulées (1979 - 2020)"),
+                        xaxis = list(title = "Mois"))
 fig2
-FIG <- subplot(fig1, fig2, nrows = 2)
+FIG <- subplot(fig1,
+               fig2,
+               nrows = 2,
+               shareX = TRUE,
+               shareY = FALSE)
 FIG
+# --- Autre style --- #
+ay <- list(
+  tickfont = list(color = "green"),
+  overlaying = "y",
+  side = "right",
+  title = "Précipitations cumulées (mm)")
 
-
+over <- plot_ly()
+over <- over %>% add_lines(x = datn$Month,
+                y = datn$Value,
+                type = "scatter",
+                mode = "lines+markers",
+                marker = list(symbol = "circle",
+                              color = 'darkorange'),
+                line = list(color = "darkorange"),
+                fill = "tozeroy",
+                fillcolor = "rgba(255,126,0,0.4)",
+                name = "Températures")
+over <- over %>% add_trace(x = datp$Month,
+                           y = datp$Value,
+                           name = "Précipitations",
+                           type = "bar",
+                           opacity = 0.5,
+                           orientation = "v",
+                           marker = list(color = "green"),
+                           yaxis = "y2")
+over <- over %>%  layout(title = "Double axis",
+                         yaxis = list(title = "Températures moyennes (C)",
+                                      tickfont = list(color = "darkorange")),
+                         yaxis2 = ay,
+                         xaxis = list(title = "Mois"),
+                         showlegend = FALSE) %>% 
+                  config(displayModeBar = FALSE)
+over
 #### --------- Interactive graphs with Ouranos data - plotly ----------------- ####
 
-PrecEstrie <- read.csv("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_ouranos/Estrie-TotAnnPrec.csv")
-TempEstrie <- read.csv("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_ouranos/Estrie-MoyAnnTemp.csv")
+PrecEstrie <- read.csv("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_ouranos/Estrie-Total annuel des précipitations .csv")
+TempEstrie <- read.csv("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos/data_ouranos/Estrie-Moyenne annuelle des températures .csv")
 
 #---#
 summary(PrecEstrie)
@@ -453,27 +492,27 @@ figTemp <- plot_ly(x = TempEstrie$Annee,
                line = list(color = 'rgba(230,191,0,1)'),
                name = "hist_prec",
                showlegend = TRUE)
-figTemp <- figTemp %>% add_ribbons(x = TempEstrie$Annee,
-                                   ymin = TempEstrie$Hist.Min,
-                                   ymax = TempEstrie$Hist.Max,
-                                   line = list(color = 'transparent'),
-                                   fillcolor='rgba(230,191,0,0.2)')
-# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
-#                          y = TempEstrie$Hist.Min,
-#                          type = "scatter",
-#                          mode = "lines",
-#                          line = list(color = 'transparent'),
-#                          name = "hist_prec_min",
-#                          showlegend = FALSE)
-# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
-#                          y = TempEstrie$Hist.Max,
-#                          type = "scatter",
-#                          mode = "lines",
-#                          fill = "tonexty",
-#                          fillcolor='rgba(230,191,0,0.2)',
-#                          line = list(color = 'transparent'),
-#                          name = "hist_prec_max",
-#                          showlegend = FALSE)
+# figTemp <- figTemp %>% add_ribbons(x = TempEstrie$Annee,
+#                                    ymin = TempEstrie$Hist.Min,
+#                                    ymax = TempEstrie$Hist.Max,
+#                                    line = list(color = 'transparent'),
+#                                    fillcolor='rgba(230,191,0,0.2)')
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$Hist.Min,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'transparent'),
+                         name = "hist_prec_min",
+                         showlegend = FALSE)
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$Hist.Max,
+                         type = "scatter",
+                         mode = "lines",
+                         fill = "tonexty",
+                         fillcolor='rgba(230,191,0,0.2)',
+                         line = list(color = 'transparent'),
+                         name = "hist_prec_max",
+                         showlegend = FALSE)
 #---#
 figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
                          y = TempEstrie$rcp45.Avg,
@@ -482,27 +521,27 @@ figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
                          line = list(color = 'rgba(153,102,0,1)'),
                          name = "emission_moderees",
                          showlegend = TRUE)
-figTemp <- figTemp %>% add_ribbons(x = TempEstrie$Annee,
-                                   ymin = TempEstrie$rcp45.Min,
-                                   ymax = TempEstrie$rcp45.Max,
-                                   line = list(color = "transparent"),
-                                   fillcolor = 'rgba(153,102,0,0.2)')
-# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
-#                          y = TempEstrie$rcp45.Min,
-#                          type = "scatter",
-#                          mode = "lines",
-#                          line = list(color = 'transparent'),
-#                          name = "em_mod_min",
-#                          showlegend = FALSE)
-# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
-#                          y = TempEstrie$rcp45.Max,
-#                          type = "scatter",
-#                          mode = "lines",
-#                          fill = "tonexty",
-#                          fillcolor='rgba(153,102,0,0.2)',
-#                          line = list(color = 'transparent'),
-#                          name = "em_mod_max",
-#                          showlegend = TRUE)
+# figTemp <- figTemp %>% add_ribbons(x = TempEstrie$Annee,
+#                                    ymin = TempEstrie$rcp45.Min,
+#                                    ymax = TempEstrie$rcp45.Max,
+#                                    line = list(color = "transparent"),
+#                                    fillcolor = 'rgba(153,102,0,0.2)')
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$rcp45.Min,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'transparent'),
+                         name = "em_mod_min",
+                         showlegend = FALSE)
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$rcp45.Max,
+                         type = "scatter",
+                         mode = "lines",
+                         fill = "tonexty",
+                         fillcolor='rgba(153,102,0,0.2)',
+                         line = list(color = 'transparent'),
+                         name = "em_mod_max",
+                         showlegend = TRUE)
 #---#
 figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
                          y = TempEstrie$rcp85.Avg,
@@ -511,35 +550,40 @@ figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
                          line = list(color = "rgba(255,51,51,1)"),
                          name = "emission_fortes",
                          showlegend = TRUE)
-figTemp <- figTemp %>%  add_ribbons(x = TempEstrie$Annee,
-                                    ymin = TempEstrie$rcp85.Min,
-                                    ymax = TempEstrie$rcp85.Max,
-                                    line = list(color = "transparent"),
-                                    fillcolor = "rgba(255,51,51,0.2)")
-# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
-#                          y = TempEstrie$rcp85.Min,
-#                          type = "scatter",
-#                          mode = "lines",
-#                          line = list(color = 'transparent'),
-#                          name = "em_forte_min",
-#                          showlegend = FALSE)
-# figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
-#                          y = TempEstrie$rcp85.Max,
-#                          type = "scatter",
-#                          mode = "lines",
-#                          fill = "tonexty",
-#                          fillcolor='rgba(255,51,51,0.2)',
-#                          line = list(color = 'transparent'),
-#                          name = "em_forte_max",
-#                          showlegend = FALSE)
+# figTemp <- figTemp %>%  add_ribbons(x = TempEstrie$Annee,
+#                                     ymin = TempEstrie$rcp85.Min,
+#                                     ymax = TempEstrie$rcp85.Max,
+#                                     line = list(color = "transparent"),
+#                                     fillcolor = "rgba(255,51,51,0.2)")
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$rcp85.Min,
+                         type = "scatter",
+                         mode = "lines",
+                         line = list(color = 'transparent'),
+                         name = "em_forte_min",
+                         showlegend = FALSE)
+figTemp <- figTemp %>% add_trace(x = TempEstrie$Annee,
+                         y = TempEstrie$rcp85.Max,
+                         type = "scatter",
+                         mode = "lines",
+                         fill = "tonexty",
+                         fillcolor='rgba(255,51,51,0.2)',
+                         line = list(color = 'transparent'),
+                         name = "em_forte_max",
+                         showlegend = FALSE)
 #---#
 figTemp
 
 
 
+FFIGG <- subplot(fig,
+                 figTemp,
+                 nrows = 2,
+                 shareX = TRUE,
+                 shareY = FALSE) %>% 
+  layout(showlegend = FALSE)
 
-
-
+FFIGG
 
 
 
