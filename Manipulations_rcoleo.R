@@ -10,7 +10,8 @@ library(geojsonio)
 library(sf)
 
 source("functions.R")
-
+source("regions_Ouranos_vs_cellules_COLEO.R")
+setwd("/home/claire/PostDoc_COLEO/shiny_site_info/SITES_INFOS_tests/COLEO_site_infos")
 
 # ----------------------------------------------------- #
 #### Obtention des informations pour tous les sites ####
@@ -29,7 +30,7 @@ names(all_sites)
 #  geom.coordinates))
 all_sites$geom.coordinates[[1]]
 k <- as.data.frame(do.call("rbind", all_sites$geom.coordinates))
-k
+#k
 all_sites <- all_sites %>% 
   mutate(long_site = do.call("rbind", all_sites$geom.coordinates)[,1],
          lat_site = do.call("rbind", all_sites$geom.coordinates)[,2])
@@ -122,6 +123,9 @@ RColorBrewer::brewer.pal(n = length(cat_unik), name = "Dark2")
 coul <- data.frame(RColorBrewer::brewer.pal(n = length(cat_unik), name = "Dark2"), sort(cat_unik))
 names(coul) <- c("cat_coul", "category")
 all_obs <-  dplyr::left_join(all_obs, coul, by = "category")
+
+  # Ajout de l'information régionale à all_obs
+all_obs <- dplyr::left_join(all_obs, RegCellsShiny[, c(3, 4)], by = "cell_id")
 
 # ------------------------------------------------ #
 #### Compte des différents types d'indicateurs ####
