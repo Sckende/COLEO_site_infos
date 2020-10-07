@@ -200,27 +200,28 @@ server <- function(input, output, session) {
             
             #---#
             reg <- unique(obs_an()$Region[obs_an()$site_code == event$id])
-            scenar <- scenario_meteo[scenario_meteo$Region == reg,]
+            scenar_temp <- scenario_meteo[scenario_meteo$Region == reg & scenario_meteo$param_met == "temp",]
+            
+            scenar_temp$Hist.Min[scenar_temp$Annee == 2007] <- min(scenar_temp$rcp45.Min[scenar_temp$Annee == 2007], scenar_temp$rcp85.Min[scenar_temp$Annee == 2007])
+            scenar_temp$Hist.Max[scenar_temp$Annee == 2007] <- min(scenar_temp$rcp45.Max[scenar_temp$Annee == 2007], scenar_temp$rcp85.Max[scenar_temp$Annee == 2007])
             
             #---#
-            figTemp <- plot_ly(x = scenar$Annee[scenar$param_met == "temp"],
-                               y = scenar$Obs[scenar$param_met == "temp"],
+            figTemp <- plot_ly(x = scenar_temp$Annee,
+                               y = scenar_temp$Obs,
                                type = "scatter",
                                mode = "lines",
                                line = list(color = 'darkorange'),
                                name = "hist_temp",
                                showlegend = TRUE) %>% 
-                add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                          y = scenar$Hist.Max[scenar$param_met == "temp"],
+                add_trace(x = scenar_temp$Annee,
+                          y = scenar_temp$Hist.Max,
                           type = "scatter",
                           mode = "lines",
-                          fill = "tonexty",
-                          fillcolor='rgba(153,102,0,0.2)',
                           line = list(color = 'transparent'),
                           name = "hist_max",
                           showlegend = FALSE) %>% 
-                add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                          y = scenar$Hist.Min[scenar$param_met == "temp"],
+                add_trace(x = scenar_temp$Annee,
+                          y = scenar_temp$Hist.Min,
                           type = "scatter",
                           mode = "lines",
                           fill = "tonexty",
@@ -228,24 +229,22 @@ server <- function(input, output, session) {
                           line = list(color = 'transparent'),
                           name = "hist_min",
                           showlegend = FALSE)
-            figTemp <- figTemp %>% add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                                             y = scenar$rcp45.Avg[scenar$param_met == "temp"],
+            figTemp <- figTemp %>% add_trace(x = scenar_temp$Annee,
+                                             y = scenar_temp$rcp45.Avg,
                                              type = "scatter",
                                              mode = "lines",
                                              line = list(color = 'rgba(153,102,0,1)'),
                                              name = "emission_moderees",
                                              showlegend = TRUE) %>% 
-                add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                          y = scenar$rcp45.Max[scenar$param_met == "temp"],
+                add_trace(x = scenar_temp$Annee,
+                          y = scenar_temp$rcp45.Max,
                           type = "scatter",
                           mode = "lines",
-                          fill = "tonexty",
-                          fillcolor='rgba(153,102,0,0.2)',
                           line = list(color = 'transparent'),
                           name = "emission_moderee_max",
                           showlegend = FALSE) %>% 
-                add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                          y = scenar$rcp45.Min[scenar$param_met == "temp"],
+                add_trace(x = scenar_temp$Annee,
+                          y = scenar_temp$rcp45.Min,
                           type = "scatter",
                           mode = "lines",
                           fill = "tonexty",
@@ -253,24 +252,22 @@ server <- function(input, output, session) {
                           line = list(color = 'transparent'),
                           name = "emission_moderee_min",
                           showlegend = FALSE)
-            figTemp <- figTemp %>% add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                                             y = scenar$rcp85.Avg[scenar$param_met == "temp"],
+            figTemp <- figTemp %>% add_trace(x = scenar_temp$Annee,
+                                             y = scenar_temp$rcp85.Avg,
                                              type = "scatter",
                                              mode = "lines",
                                              line = list(color = "rgba(255,51,51,1)"),
                                              name = "emission_fortes",
                                              showlegend = TRUE) %>% 
-                add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                          y = scenar$rcp85.Max[scenar$param_met == "temp"],
+                add_trace(x = scenar_temp$Annee,
+                          y = scenar_temp$rcp85.Max,
                           type = "scatter",
                           mode = "lines",
-                          fill = "tonexty",
-                          fillcolor='rgba(255,51,51,0.2)',
                           line = list(color = 'transparent'),
                           name = "emission_forte_max",
                           showlegend = FALSE) %>% 
-                add_trace(x = scenar$Annee[scenar$param_met == "temp"],
-                          y = scenar$rcp85.Min[scenar$param_met == "temp"],
+                add_trace(x = scenar_temp$Annee,
+                          y = scenar_temp$rcp85.Min,
                           type = "scatter",
                           mode = "lines",
                           fill = "tonexty",
@@ -304,36 +301,93 @@ server <- function(input, output, session) {
         output$scenarios_prec <- renderPlotly({
             
             
-            if (is.null(event))
+            if (is.null(event)){
                 return(NULL)
+            }else{
+                
             #---#
             reg <- unique(obs_an()$Region[obs_an()$site_code == event$id])
-            scenar <- scenario_meteo[scenario_meteo$Region == reg,]
+            scenar_prec <- scenario_meteo[scenario_meteo$Region == reg & scenario_meteo$param_met == "prec",]
+            
+            scenar_prec$Hist.Min[scenar_prec$Annee == 2007] <- min(scenar_prec$rcp45.Min[scenar_prec$Annee == 2007], scenar_prec$rcp85.Min[scenar_prec$Annee == 2007])
+            scenar_prec$Hist.Max[scenar_prec$Annee == 2007] <- min(scenar_prec$rcp45.Max[scenar_prec$Annee == 2007], scenar_prec$rcp85.Max[scenar_prec$Annee == 2007])
+            
             #---#
-        figPrec <- plot_ly(x = scenar$Annee[scenar$param_met == "prec"],
-                           y = scenar$Obs[scenar$param_met == "prec"],
+            figPrec <- plot_ly(x = scenar_prec$Annee,
+                           y = scenar_prec$Obs,
                            type = "scatter",
                            mode = "lines",
-                           #line = list(color = 'rgb(59,122,128'),
-                           line = list(color = "green"),
+                           line = list(color = 'rgba(0,100,80,1)'),
                            name = "hist_prec",
                            showlegend = TRUE)
-        figPrec <- figPrec %>% add_trace(x = scenar$Annee[scenar$param_met == "prec"],
-                                         y = scenar$rcp45.Avg[scenar$param_met == "prec"],
-                                         type = "scatter",
-                                         mode = "lines",
-                                         line = list(color = 'rgba(153,102,0,1)'),
-                                         name = "emission_moderees",
-                                         showlegend = TRUE)
-        figPrec <- figPrec %>% add_trace(x = scenar$Annee[scenar$param_met == "prec"],
-                                         y = scenar$rcp85.Avg[scenar$param_met == "prec"],
-                                         type = "scatter",
-                                         mode = "lines",
-                                         line = list(color = "rgba(255,51,51,1)"),
-                                         name = "emission_fortes",
-                                         showlegend = TRUE)
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$Hist.Min,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     line = list(color = 'transparent'),
+                                     name = "hist_prec_min",
+                                     showlegend = FALSE)
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$Hist.Max,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     fill = "tonexty",
+                                     fillcolor='rgba(0,100,80,0.2)',
+                                     line = list(color = 'transparent'),
+                                     name = "hist_prec_max",
+                                     showlegend = FALSE)
+            #---#
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$rcp45.Avg,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     line = list(color = 'rgba(153,102,0,1)'),
+                                     name = "emission_moderees",
+                                     showlegend = TRUE)
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$rcp45.Min,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     line = list(color = 'transparent'),
+                                     name = "em_mod_min",
+                                     showlegend = FALSE)
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$rcp45.Max,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     fill = "tonexty",
+                                     fillcolor='rgba(153,102,0,0.2)',
+                                     line = list(color = 'transparent'),
+                                     name = "em_mod_max",
+                                     showlegend = FALSE)
+            #---#
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$rcp85.Avg,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     line = list(color = "rgba(255,51,51,1)"),
+                                     name = "emission_fortes",
+                                     showlegend = TRUE)
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$rcp85.Min,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     line = list(color = 'transparent'),
+                                     name = "em_forte_min",
+                                     showlegend = FALSE)
+            figPrec <- figPrec %>% add_trace(x = scenar_prec$Annee,
+                                     y = scenar_prec$rcp85.Max,
+                                     type = "scatter",
+                                     mode = "lines",
+                                     fill = "tonexty",
+                                     fillcolor='rgba(255,51,51,0.2)',
+                                     line = list(color = 'transparent'),
+                                     name = "em_forte_max",
+                                     showlegend = FALSE)
+            #---#
+            figPrec
         figPrec <- figPrec %>% 
-            layout(yaxis = list(title = "Précipitations cumulées",
+            layout(yaxis = list(title = "Précipitations cumulées (mm)",
                                 showgrid = F),
                    xaxis = list(title = "Année",
                                 showgrid = F),
@@ -350,35 +404,7 @@ server <- function(input, output, session) {
             layout(plot_bgcolor = "rgba(254, 247, 234, 0)") %>%
             layout(paper_bgcolor = "rgba(254, 247, 234, 0)") %>%
             config(displayModeBar = FALSE)
-        #---#
-        # scen_fig <- subplot(figTemp,
-        #                     figPrec,
-        #                     nrows = 2,
-        #                     shareX = TRUE)
-        # scen_fig <- scen_fig %>% 
-        #     layout(title = reg,
-        #            yaxis = list(title = "Températures moyennes (C)",
-        #                         tickfont = list(color = "darkorange"),
-        #                         showgrid = F),
-        #            yaxis2 = list(title = "Précipitations cumulées",
-        #                          tickfont = list(color = "green"),
-        #                          showgrid = F),
-        #            xaxis = list(title = "Mois",
-        #                         showgrid = F),
-        #            showlegend = TRUE,
-        #            legend = list(orientation = 'v', # show entries horizontally
-        #                          xanchor = "center", # use center of legend as anchor
-        #                          x = 0.5,
-        #                          y = -1), #put legend in center of x-axis
-        #            margin = list(I = 80,
-        #                          r = 80,
-        #                          t = 100,
-        #                          b = 100,
-        #                          autoexpand = TRUE)) %>% 
-        #     layout(plot_bgcolor = "rgba(254, 247, 234, 0)") %>% 
-        #     layout(paper_bgcolor = "rgba(254, 247, 234, 0)") %>% 
-        #     config(displayModeBar = FALSE)
-        # scen_fig
+            }
 
     })
         # Obtention de la liste des espèces observées lors de l'échantillonnage TOUTES CAMPAGNES CONFONDUES
